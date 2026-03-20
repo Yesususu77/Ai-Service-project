@@ -1,8 +1,10 @@
 """Thread safety tests for the i18n singleton and ContextVar isolation."""
 
 import contextvars
+import sys
 import threading
 import unittest
+from unittest.mock import patch
 
 from acestep.ui.gradio.i18n.i18n import (
     _current_language_var,
@@ -188,17 +190,22 @@ class ContextVarIsolationTests(unittest.TestCase):
         # Ensure singleton exists so validation can run
         get_i18n()
         # "xyz_invalid" is not a loaded translation
-        token = set_language_context("xyz_invalid")
-        try:
-            # ContextVar is still set (graceful degradation)
-            self.assertEqual(_current_language_var.get(), "xyz_invalid")
-            # t() should fall back to English, then to key itself
-            result = t("app.title")
-            # Should get the English fallback, not the raw key
-            self.assertNotEqual(result, "app.title",
-                                "Expected English fallback, got raw key")
-        finally:
-            reset_language_context(token)
+        with patch.object(
+            sys.modules[set_language_context.__module__], "logger",
+        ) as mock_logger:
+            token = set_language_context("xyz_invalid")
+            try:
+                # ContextVar is still set (graceful degradation)
+                self.assertEqual(_current_language_var.get(), "xyz_invalid")
+                # Warning must have fired exactly once
+                mock_logger.warning.assert_called_once()
+                # t() should fall back to English, then to key itself
+                result = t("app.title")
+                # Should get the English fallback, not the raw key
+                self.assertNotEqual(result, "app.title",
+                                    "Expected English fallback, got raw key")
+            finally:
+                reset_language_context(token)
 
     def test_contextvar_isolation_in_copy_context(self):
         """contextvars.copy_context isolates changes from the parent."""
