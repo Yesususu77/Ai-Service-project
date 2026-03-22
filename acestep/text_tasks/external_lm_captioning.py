@@ -6,6 +6,8 @@ from typing import Any
 
 from loguru import logger
 
+from .external_lm_captioning_fallback_locale import build_localized_fallback_caption
+
 _FILTERED_METADATA_SENTINELS = {"", "unknown", "none", "n/a", "default"}
 
 
@@ -64,30 +66,7 @@ def apply_user_metadata_overrides(*, plan: Any, user_metadata: dict[str, Any]) -
 def build_fallback_caption(*, caption: str, user_metadata: dict[str, Any]) -> str:
     """Build a simple local narrative fallback when the provider keeps echoing input."""
 
-    source = (caption or "music piece").strip().rstrip(".")
-    if not source:
-        source = "music piece"
-    bpm = user_metadata.get("bpm")
-    duration = user_metadata.get("duration")
-    keyscale = user_metadata.get("keyscale")
-    timesignature = user_metadata.get("timesignature")
-
-    parts = [
-        f"{source} unfolds as a fuller arranged track with a clear intro, developing verses,",
-        "a stronger chorus or drop, and a shaped outro that resolves the energy naturally.",
-    ]
-    if bpm not in (None, ""):
-        parts.append(f"The groove stays anchored around {bpm} BPM.")
-    if timesignature:
-        parts.append(f"The arrangement holds a {timesignature} pulse throughout.")
-    if keyscale:
-        parts.append(f"The harmony centers on {keyscale}.")
-    if duration not in (None, ""):
-        parts.append(f"The structure is paced for roughly {duration} seconds.")
-    parts.append(
-        "The mix should grow from a more focused opening into a fuller, more energetic peak before easing out."
-    )
-    return " ".join(parts)
+    return build_localized_fallback_caption(caption=caption, user_metadata=user_metadata)
 
 
 def build_format_request_intent(

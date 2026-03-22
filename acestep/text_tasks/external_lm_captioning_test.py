@@ -102,6 +102,21 @@ class ExternalLmCaptioningTests(unittest.TestCase):
 
         self.assertIn("music piece unfolds", caption)
 
+    def test_build_fallback_caption_localizes_supported_languages(self) -> None:
+        """Supported language codes should switch the local fallback prose."""
+
+        caption = build_fallback_caption(
+            caption="Dreamy city-pop",
+            user_metadata={
+                "language": "ja-JP",
+                "bpm": 118,
+            },
+        )
+
+        self.assertIn("Dreamy city-pop", caption)
+        self.assertIn("BPM前後", caption)
+        self.assertNotIn("The groove stays anchored", caption)
+
     def test_build_format_request_intent_omits_unknown_metadata(self) -> None:
         """Unknown metadata values should not be emitted into the request intent."""
 
