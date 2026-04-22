@@ -109,29 +109,64 @@ def test_apply_mlx_dcw_pix_matches_formula(dcw_mlx):
     assert diff < 1e-6
 
 
-@pytest.mark.skipif(not HAS_MLX, reason="MLX not installed")
-def test_apply_mlx_dcw_unknown_wavelet_warns_once_and_falls_back(dcw_mlx, caplog):
+HAS_PW = importlib.util.find_spec("pytorch_wavelets") is not None
+
+
+@pytest.mark.skipif(not (HAS_MLX and HAS_PW), reason="MLX or pytorch_wavelets missing")
+def test_apply_mlx_dcw_non_haar_differs_from_haar(dcw_mlx):
+    """Selecting a non-Haar wavelet should produce a different output — i.e.
+    the torch bridge is actually invoked and the UI's dropdown is not a
+    silent no-op on MLX.
+    """
     import mlx.core as mx
 
-    # Reset the module-level warn-once flag to exercise the warning path.
-    dcw_mlx._warned_fallback = False
-    x = mx.random.normal((1, 8, 2))
-    y = mx.random.normal((1, 8, 2))
-    with caplog.at_level("WARNING"):
-        out = dcw_mlx.apply_mlx_dcw(
-            x, y, t_curr=0.5, enabled=True, mode="low",
-            scaler=0.1, high_scaler=0.0, wavelet="db4",
-        )
-    assert any("db4" in rec.message for rec in caplog.records)
-    # Second call must not re-warn.
-    caplog.clear()
-    _ = dcw_mlx.apply_mlx_dcw(
-        x, y, t_curr=0.5, enabled=True, mode="low",
-        scaler=0.1, high_scaler=0.0, wavelet="db4",
+    x = mx.random.normal((1, 32, 4))
+    y = mx.random.normal((1, 32, 4))
+    out_haar = dcw_mlx.apply_mlx_dcw(
+        x, y, t_curr=0.7, enabled=True, mode="low",
+        scaler=0.2, high_scaler=0.0, wavelet="haar",
     )
-    assert not any("db4" in rec.message for rec in caplog.records)
-    # Output shape preserved.
-    assert out.shape == x.shape
+    for wav in ("db4", "sym8"):
+        out_other = dcw_mlx.apply_mlx_dcw(
+            x, y, t_curr=0.7, enabled=True, mode="low",
+            scaler=0.2, high_scaler=0.0, wavelet=wav,
+        )
+        diff = mx.abs(out_other - out_haar).max().item()
+        assert diff > 1e-4, f"MLX {wav} output was identical to haar — bridge not firing"
+        assert out_other.shape == x.shape
+
+
+@pytest.mark.skipif(not (HAS_MLX and HAS_PW), reason="MLX or pytorch_wavelets missing")
+def test_apply_mlx_dcw_matches_torch_path_exactly(dcw_mlx):
+    """MLX non-Haar output must match the CUDA/CPU torch path bit-for-bit
+    (minus float32 conversion noise) — that's the whole point of the
+    bridge.
+    """
+    import mlx.core as mx
+    import torch
+    import numpy as np
+    from acestep.models.common.dcw_primitives import dcw_low as torch_dcw_low
+
+    x_mx = mx.random.normal((1, 32, 4))
+    y_mx = mx.random.normal((1, 32, 4))
+    x_t = torch.from_numpy(np.array(x_mx, dtype="float32"))
+    y_t = torch.from_numpy(np.array(y_mx, dtype="float32"))
+
+    wav = "sym8"
+    t = 0.5
+    s_user = 0.1
+    # Bridge output (via MLX entrypoint)
+    out_mx = dcw_mlx.apply_mlx_dcw(
+        x_mx, y_mx, t_curr=t, enabled=True, mode="low",
+        scaler=s_user, high_scaler=0.0, wavelet=wav,
+    )
+    out_mx_np = np.array(out_mx)
+
+    # Reference output (pure torch)
+    out_t = torch_dcw_low(x_t, y_t, t * s_user, wavelet=wav).numpy()
+
+    diff = float(np.abs(out_mx_np - out_t).max())
+    assert diff < 1e-5, f"MLX bridge diverged from torch path by {diff}"
 
 
 @pytest.mark.skipif(not HAS_MLX, reason="MLX not installed")

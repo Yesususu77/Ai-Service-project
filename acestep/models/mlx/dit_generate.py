@@ -345,17 +345,19 @@ def mlx_generate_diffusion(
     diff_start = time.time()
     _switched_to_non_cover = False
 
-    # DCW — opt-in per-band wavelet-domain correction (CVPR 2026).
-    # See ``acestep.models.mlx.dcw_correction_mlx`` for the native Haar
-    # implementation.  The call short-circuits when disabled.
+    # DCW — opt-in per-band wavelet-domain correction (CVPR 2026).  On MLX,
+    # `haar` runs natively; other wavelets bridge through pytorch_wavelets
+    # for output parity with the CUDA/CPU PyTorch path.  See
+    # `acestep.models.mlx.dcw_correction_mlx`.
     from acestep.models.mlx.dcw_correction_mlx import apply_mlx_dcw
     dcw_active = dcw_enabled and (
         dcw_scaler != 0.0 or (dcw_mode == "double" and dcw_high_scaler != 0.0)
     )
     if dcw_active:
+        _backend = "MLX-native Haar" if dcw_wavelet == "haar" else f"torch bridge ({dcw_wavelet})"
         logger.info(
-            "[MLX-DiT] DCW enabled (mode=%s, scaler=%.3f, high_scaler=%.3f, wavelet=%s).",
-            dcw_mode, dcw_scaler, dcw_high_scaler, dcw_wavelet,
+            "[MLX-DiT] DCW enabled (mode=%s, scaler=%.3f, high_scaler=%.3f, wavelet=%s, backend=%s).",
+            dcw_mode, dcw_scaler, dcw_high_scaler, dcw_wavelet, _backend,
         )
 
     for step_idx in tqdm(range(num_steps), desc="MLX DiT diffusion", disable=disable_tqdm):
