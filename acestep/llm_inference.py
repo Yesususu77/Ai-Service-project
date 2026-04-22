@@ -80,6 +80,12 @@ class LLMHandler:
         self._mlx_model = None
         self._mlx_model_path = None
 
+        # A/B toggle: when True, use the pre-fix prompt format for CFG uncond
+        # (keeps caption+lyrics in uncond, closes the assistant turn with <|im_end|>
+        # before codes). Intended for manual comparison against the training-aligned
+        # format only.
+        self.use_legacy_cfg_prompt = False
+
     def _clear_accelerator_cache(self) -> None:
         """Release freed accelerator memory back to the driver.
 
@@ -1716,6 +1722,31 @@ class LLMHandler:
         """
         if self.llm_tokenizer is None:
             raise ValueError("LLM tokenizer is not initialized. Call initialize() first.")
+
+        if self.use_legacy_cfg_prompt:
+            # Legacy (pre-fix) path kept for manual A/B comparison. Uncond keeps
+            # the caption+lyrics wrapper and the assistant turn is closed with
+            # <|im_end|> before codes are generated.
+            if is_negative_prompt:
+                has_negative_prompt = self._has_meaningful_negative_prompt(negative_prompt)
+                cot_for_prompt = "<think>\n</think>"
+                caption_for_prompt = negative_prompt if has_negative_prompt else caption
+            else:
+                cot_for_prompt = cot_text
+                caption_for_prompt = caption
+            user_prompt = f"# Caption\n{caption_for_prompt}\n\n# Lyric\n{lyrics}\n"
+            formatted = self.llm_tokenizer.apply_chat_template(
+                [
+                    {"role": "system", "content": f"# Instruction\n{DEFAULT_LM_INSTRUCTION}\n\n"},
+                    {"role": "user", "content": user_prompt},
+                    {"role": "assistant", "content": cot_for_prompt},
+                ],
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+            if not formatted.endswith('\n'):
+                formatted += '\n'
+            return formatted
 
         if is_negative_prompt:
             # Match training CFG-dropout format: user message is the raw negative prompt
