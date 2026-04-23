@@ -175,7 +175,7 @@
     "dcw_enabled_label": "启用 DCW",
     "dcw_enabled_info": "可选的采样器端 SNR-t 偏差校正（CVPR 2026，arXiv:2604.16044）。在每一步去噪后，在小波域对频带逐个施加差分修正。默认关闭。",
     "dcw_mode_label": "DCW 模式",
-    "dcw_mode_info": "low：仅校正低频带（论文默认，最稳）。high：仅校正高频带。double：双频带各自校正。pix：直接在潜在空间做校正（消融对照）。",
+    "dcw_mode_info": "low：仅校正低频带（与论文 README 示例一致，我们推荐的起点）。high：仅校正高频带。double：双频带各自校正（ACE-Step 扩展，参考实现里没有此模式）。pix：不做小波变换，直接在潜在空间做校正。",
     "dcw_scaler_label": "DCW 强度",
     "dcw_scaler_info": "低频带（或 high/pix 模式下的单一频带）校正强度。内部按 t_curr 逐步衰减，所以该值是 t=1 附近的名义强度，会随 t→0 线性趋于 0。默认 0.02，推荐范围 0–0.1；过大会引入伪影。",
     "dcw_high_scaler_label": "DCW 高频强度",

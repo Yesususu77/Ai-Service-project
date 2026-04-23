@@ -77,14 +77,20 @@ are forwarded through the generation handler chain into the base model's
 ### Mode reference
 
 - **`low`** — Push only the low-frequency band away from the denoised
-  estimate. The paper's default; a good starting point for flow-matching
-  models.
+  estimate. Matches the `dcw_low` code example in the paper's README
+  and is our recommended starting point on ACE-Step. Note that the
+  reference repo does *not* claim a single "best" mode — the FLUX
+  scheduler in AMAP-ML/DCW actually ships with `pix` as the active
+  line and `dcw_low` / `dcw_high` commented out — so treat `low` as a
+  sensible default, not a canonical one.
 - **`high`** — Same but on the high-frequency detail band.
 - **`double`** — Both bands, with independent `dcw_scaler` and
-  `dcw_high_scaler`.
+  `dcw_high_scaler`. ACE-Step extension; the reference implementation
+  does not expose a separate high-band scaler.
 - **`pix`** — No wavelet transform; correction is applied directly in
-  latent space. Useful as an ablation and does not require
-  `pytorch_wavelets`.
+  latent space. This is the mode the reference FLUX scheduler leaves
+  uncommented, so it is useful both as an ablation and as a
+  "closest-to-reference" baseline.
 
 ## Usage example (Python API)
 
