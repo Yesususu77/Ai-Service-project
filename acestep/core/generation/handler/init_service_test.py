@@ -471,10 +471,12 @@ class InitServiceMixinTests(unittest.TestCase):
             "quantization",
             "use_mlx_dit",
             "prefer_source",
+            "vae_checkpoint",
         }
         self.assertEqual(set(host.last_init_params.keys()), expected_keys)
         self.assertEqual(host.last_init_params["config_path"], "acestep-v15-turbo")
         self.assertEqual(host.last_init_params["device"], "cpu")
+        self.assertEqual(host.last_init_params["vae_checkpoint"], "official")
         ensure_models.assert_called_once()
         sync_code.assert_called_once()
 

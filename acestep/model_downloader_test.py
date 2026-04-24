@@ -202,5 +202,117 @@ class TestCheckModelExists(unittest.TestCase):
         self.assertTrue(result)
 
 
+class TestResolveVaePath(unittest.TestCase):
+    """Tests for model_downloader.resolve_vae_path()."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = _load_module()
+
+    def test_default_resolves_to_bundled_vae_directory(self):
+        """None / empty / 'official' all map to <ckpt>/vae."""
+        ckpt = Path("/tmp/some-ckpts")
+        expected = ckpt / "vae"
+        self.assertEqual(self.mod.resolve_vae_path(ckpt, None), expected)
+        self.assertEqual(self.mod.resolve_vae_path(ckpt, ""), expected)
+        self.assertEqual(self.mod.resolve_vae_path(ckpt, "official"), expected)
+        self.assertEqual(self.mod.resolve_vae_path(str(ckpt), "official"), expected)
+
+    def test_registered_variant_maps_to_subdirectory(self):
+        """A variant id from VAE_REGISTRY resolves to <ckpt>/<variant>."""
+        ckpt = Path("/tmp/some-ckpts")
+        for variant in self.mod.VAE_REGISTRY:
+            self.assertEqual(
+                self.mod.resolve_vae_path(ckpt, variant), ckpt / variant
+            )
+
+    def test_absolute_path_passes_through(self):
+        """An absolute path is returned verbatim."""
+        ckpt = Path("/tmp/some-ckpts")
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            self.assertEqual(
+                self.mod.resolve_vae_path(ckpt, tmp_dir), Path(tmp_dir)
+            )
+
+    def test_unknown_variant_raises(self):
+        """Unrecognized variant ids surface a ValueError listing the registry."""
+        with self.assertRaises(ValueError) as ctx:
+            self.mod.resolve_vae_path(Path("/tmp/c"), "no-such-vae")
+        msg = str(ctx.exception)
+        self.assertIn("no-such-vae", msg)
+        self.assertIn("official", msg)
+
+
+class TestVaeRegistryMembership(unittest.TestCase):
+    """Confirm the bundled VAE_REGISTRY entries surface via list_available_vae_variants."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = _load_module()
+
+    def test_official_listed_first(self):
+        """list_available_vae_variants always begins with 'official'."""
+        variants = self.mod.list_available_vae_variants()
+        self.assertEqual(variants[0], self.mod.DEFAULT_VAE_VARIANT)
+
+    def test_scragvae_is_registered(self):
+        """ScragVAE ships in the registry as 'scragvae'."""
+        self.assertIn("scragvae", self.mod.VAE_REGISTRY)
+        self.assertIn("scragvae", self.mod.list_available_vae_variants())
+
+
+class TestCheckVaeExists(unittest.TestCase):
+    """Tests for model_downloader.check_vae_exists()."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = _load_module()
+
+    def test_official_detected_when_bundled_weights_present(self):
+        """check_vae_exists('official') returns True iff <ckpt>/vae has weights."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            ckpt = Path(tmp_dir)
+            self.assertFalse(self.mod.check_vae_exists("official", ckpt))
+            (ckpt / "vae").mkdir()
+            (ckpt / "vae" / "diffusion_pytorch_model.safetensors").write_bytes(b"x")
+            self.assertTrue(self.mod.check_vae_exists("official", ckpt))
+
+    def test_scragvae_detected_in_subdirectory(self):
+        """A registered community variant is detected in <ckpt>/<variant>/."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            ckpt = Path(tmp_dir)
+            self.assertFalse(self.mod.check_vae_exists("scragvae", ckpt))
+            (ckpt / "scragvae").mkdir()
+            (ckpt / "scragvae" / "diffusion_pytorch_model.safetensors").write_bytes(b"x")
+            self.assertTrue(self.mod.check_vae_exists("scragvae", ckpt))
+
+    def test_unknown_variant_returns_false(self):
+        """An unknown variant id reports as missing without raising."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            self.assertFalse(self.mod.check_vae_exists("no-such", Path(tmp_dir)))
+
+
+class TestDownloadVaeRejectsOfficial(unittest.TestCase):
+    """download_vae must refuse to fetch the bundled 'official' VAE separately."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = _load_module()
+
+    def test_official_variant_returns_helpful_error(self):
+        """Refusing 'official' nudges callers toward download_main_model()."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            success, msg = self.mod.download_vae("official", Path(tmp_dir))
+        self.assertFalse(success)
+        self.assertIn("download_main_model", msg)
+
+    def test_unknown_variant_returns_helpful_error(self):
+        """Unknown variants are rejected before any network call."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            success, msg = self.mod.download_vae("no-such-vae", Path(tmp_dir))
+        self.assertFalse(success)
+        self.assertIn("no-such-vae", msg)
+
+
 if __name__ == "__main__":
     unittest.main()
