@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  backend:
+    build: .
+    container_name: backend
+    ports:
+      - "8000:8000"
+    environment:
+      - AI_URL=http://ai:8001/predict
+    depends_on:
+      - ai
+
+  ai:
+    image: your-ai-image
+    container_name: ai
+    ports:
+      - "8001:8001"
