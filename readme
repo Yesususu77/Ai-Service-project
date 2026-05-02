@@ -1,0 +1,12 @@
+# 🎵 EditMuse (Vibe Writer)
+**AI 기반 실시간 감성 분석 및 배경음악 큐레이션 서비스**
+
+### 🌟 핵심 기능
+1. **실시간 감정 분석**: 2초 디바운스 전략을 활용한 무드 및 컬러 추천.
+2. **프리미엄 테마 생성**: 챕터 종료 시 서사를 요약한 고퀄리티 유료 테마곡 설계.
+3. **뮤직덱 아카이브**: 추천 및 생성된 모든 BGM 히스토리를 상시 확인 가능한 프론트엔드 연동.
+
+### 🛠 실행 방법
+1. `.env` 파일에 Gemini API 키 설정.
+2. 패키지 설치: `pip install fastapi uvicorn google-generative-ai python-dotenv`.
+3. 서버 실행: `uvicorn main:app --reload`.
