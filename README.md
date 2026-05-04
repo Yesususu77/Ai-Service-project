@@ -56,6 +56,6 @@
 - `app/core/prompts.py`: 마스터 시스템 프롬프트 관리
 - `app/core/config.py`: 시스템 전역 파라미터 및 상수 설정
 - `app/core/utils.py`: AI 응답 데이터 검증 및 클램핑 로직
-- 'app/core/analyzer.js': 분석 엔진 본체. 트리거 제어, API 통신, 버퍼링 및 후처리 로직 전담.
+- `app/core/analyzer.js`: 분석 엔진 본체. 트리거 제어, API 통신, 버퍼링 및 후처리 로직 전담.
 
 System Architecture & Core Engine Implementation by suin-ai
