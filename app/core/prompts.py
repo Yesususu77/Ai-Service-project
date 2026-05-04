@@ -1,122 +1,55 @@
 from app import config
 
-# ──────────────────────────────────────────────
-# 감정별 컬러 매핑 테이블
-# ──────────────────────────────────────────────
-
-MOOD_COLORS: dict[str, str] = {
-    "긴장":   "#FF4500",
-    "로맨틱": "#FFC0CB",
-    "슬픔":   "#4682B4",
-    "액션":   "#D2691E",
-    "평화":   "#98FB98",
-    "희망":   "#FFD700",
-    "공포":   "#4B0082",
-    "분노":   "#B22222",
-    "신비":   "#9370DB",
-    "고믹":   "#ADFF2F",
-    "기쁨":   "#FFD700",
-    "혼란":   "#808080",
-    "설렘":   "#FF69B4",
-}
-
-# ──────────────────────────────────────────────
-# 유사 감정 매핑 (예외처리용)
-# GPT가 VALID_MOODS 외의 단어를 반환했을 때
-# 의미상 가장 가까운 유효 감정으로 매핑
-# ──────────────────────────────────────────────
+MOOD_COLORS: dict[str, str] = config.MOOD_COLORS  # config에서 참조
 
 MOOD_ALIAS: dict[str, str] = {
-    # 긴장 계열
-    "불안":   "긴장",
-    "초조":   "긴장",
-    "압박":   "긴장",
-    "두려움": "긴장",
-
-    # 로맨틱 계열
-    "사랑":   "로맨틱",
-    "애정":   "로맨틱",
-    "달콤":   "로맨틱",
-
-    # 슬픔 계열
-    "우울":   "슬픔",
-    "비통":   "슬픔",
-    "외로움": "슬픔",
-    "절망":   "슬픔",
-
-    # 기쁨 계열
-    "행복":   "기쁨",
-    "즐거움": "기쁨",
-    "유쾌":   "기쁨",
-    "환희":   "기쁨",
-
-    # 분노 계열
-    "화남":   "분노",
-    "격분":   "분노",
-    "짜증":   "분노",
-
-    # 평화 계열
-    "고요":   "평화",
-    "안정":   "평화",
-    "편안":   "평화",
-
-    # 공포 계열
-    "섬뜩":   "공포",
-    "오싹":   "공포",
-    "소름":   "공포",
-
-    # 희망 계열
-    "기대":   "희망",
-    "소망":   "희망",
-
-    # 혼란 계열
-    "당혹":   "혼란",
-    "어리둥절": "혼란",
-
-    # 설렘 계열
-    "두근":   "설렘",
-    "흥분":   "설렘",
-    "떨림":   "설렘",
+    "불안": "긴장", "초조": "긴장", "압박": "긴장", "두려움": "긴장",
+    "사랑": "로맨틱", "애정": "로맨틱", "달콤": "로맨틱",
+    "우울": "슬픔", "비통": "슬픔", "외로움": "슬픔", "절망": "슬픔",
+    "고립": "슬픔",  # ← 백엔드연결2 프롬프트에서 명시
+    "행복": "기쁨", "즐거움": "기쁨", "유쾌": "기쁨", "환희": "기쁨",
+    "화남": "분노", "격분": "분노", "짜증": "분노",
+    "고요": "평화", "안정": "평화", "편안": "평화",
+    "섬뜩": "공포", "오싹": "공포", "소름": "공포",
+    "기대": "희망", "소망": "희망",
+    "당혹": "혼란", "어리둥절": "혼란",
+    "두근": "설렘", "흥분": "설렘", "떨림": "설렘",
 }
 
-# ──────────────────────────────────────────────
-# 마스터 시스템 프롬프트
-# 문장분석 → 키워드뽑기 → 키워드로 색깔분석을 한 번에 처리
-# ──────────────────────────────────────────────
-
-_valid_moods_str = ", ".join(config.VALID_MOODS)
-_common_sfx_str  = ", ".join(config.COMMON_SFX)
-_mood_alias_str  = ", ".join([f"{k}→{v}" for k, v in MOOD_ALIAS.items()])
+_valid_moods_str = " | ".join(config.VALID_MOODS)
 
 MASTER_SYSTEM_PROMPT: str = f"""
-당신은 소설 텍스트를 분석하는 전문 AI입니다.
-아래 세 가지 작업을 한 번에 수행하고 반드시 JSON 형식으로만 응답하세요.
-절대 JSON 외의 텍스트를 포함하지 마세요.
+[SYSTEM]
+You are a literary mood analyzer for a Korean writing editor.
 
-[작업 1] 문장 분석
-- 입력된 텍스트의 감정, 분위기, 긴장감을 파악합니다.
+## MUSIC STYLE CONTEXT
+- Music style: East Asian traditional (피리, 가야금, 타악, 대금)
+- Typical sounds: 칼소리, 검기, 화살소리, 북소리, 함성, 말발굽, 풍경소리, 종소리, 봉황울음, 폭포소리
+- Common sounds (always available): 빗소리, 천둥, 바람, 파도, 눈밟는소리, 새소리, 벌레소리, 문소리, 발소리, 계단소리
 
-[작업 2] 키워드 추출
-- 텍스트의 핵심 감정과 분위기를 키워드로 추출합니다.
-- mood는 반드시 다음 목록 안에서만 선택하세요: [{_valid_moods_str}]
-- 목록에 없는 감정 단어가 감지되면 아래 유사도 매핑을 사용하세요: [{_mood_alias_str}]
-- mood는 1개 이상 3개 이하로 선택하세요.
+## TASK
+Analyze the given Korean text passage and return a single JSON object. No other output.
 
-[작업 3] 색깔 분석
-- 추출된 mood 키워드에 해당하는 색상 코드를 매핑합니다.
-
-[응답 형식]
+## OUTPUT SCHEMA
 {{
-  "mood": ["감정1", "감정2"],
-  "energy": 3,
-  "sfx": ["효과음1", "효과음2"],
-  "colors": ["#FF4500", "#4682B4"],
-  "errors": []
+  "mood": [string, string?],
+  "energy": number,
+  "sfx": [string],
+  "colors": [string],
+  "errors": [{{"type": "spell"|"grammar", "original": string, "fix": string}}]
 }}
 
-[규칙]
-- energy는 {config.ENERGY_MIN}에서 {config.ENERGY_MAX} 사이의 정수입니다.
-- sfx는 텍스트 분위기에 맞는 효과음 키워드입니다. 공통 사용 가능: [{_common_sfx_str}]
-- colors는 mood 순서에 맞춰 색상 코드를 배열로 반환합니다.
-- errors는 분석 중 문제가 있을 경우 문자열 목록으로 기록하고, 없으면 빈 배열로 두세요.
+## MOOD VALUES — STRICT
+You MUST only use values from this exact list: {_valid_moods_str}
+Do NOT invent new mood values. Map unknown moods to the closest value (e.g. 고립 → 슬픔).
+
+## RULES
+- mood: 1개 필수. 복수 감정이 명확할 때만 2개.
+- energy: 1 = nearly static / 5 = peak intensity.
+- sfx: concrete audible events OR strongly implied sounds in the text. Max 3. Return [] if none.
+- Negations ("소리가 멎었다"), internal states, non-present scenes → [].
+- Do NOT invent sounds with no textual basis.
+- colors: mood 순서에 맞춰 hex 색상 코드 배열로 반환.
+- errors: Korean spelling/grammar only. "original" must be substring of input. Max 5.
+- Output valid JSON only. No markdown, no explanation.
 """.strip()
