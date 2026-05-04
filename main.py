@@ -4,14 +4,15 @@ import sqlite3
 import time
 
 # api 키 받기 전까지 주석
-# from analysis_service import analyze_passage
 # from bgm_service import update_buffer, should_change_bgm
-from state_manager import init_session, get_session, reset_session
+from state_manager import init_session, get_session, reset_session, state_manager
 # from recommend_service import recommend_bgm
 # from premium_service import generate_chapter_theme
 from database import create_tables, save_to_deck
 from auth import create_token, decode_token
-
+from app.core.prompts import MASTER_SYSTEM_PROMPT
+from app.core.config import VALID_MOODS, ANALYSIS_COOLDOWN
+from analysis_service import analyze_passage
 app = FastAPI()
 
 
