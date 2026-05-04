@@ -1,12 +1,113 @@
 # 🎵 EditMuse (Vibe Writer)
 **AI 기반 실시간 감성 분석 및 배경음악 큐레이션 서비스**
 
+AI 기반 감정 분석을 통해 실시간으로 배경 음악(BGM)과 효과음(SFX)을 추천하고,  
+챕터 단위로 AI 테마곡을 생성하는 **소설 창작 지원 시스템**입니다.
+
 ### 🌟 핵심 기능
 1. **실시간 감정 분석**: 2초 디바운스 전략을 활용한 무드 및 컬러 추천.
-2. **프리미엄 테마 생성**: 챕터 종료 시 서사를 요약한 고퀄리티 유료 테마곡 설계.
-3. **뮤직덱 아카이브**: 추천 및 생성된 모든 BGM 히스토리를 상시 확인 가능한 프론트엔드 연동.
+2. **프리미엄 테마곡 생성**: 챕터 종료 시 서사를 요약한 고퀄리티 유료 테마곡 설계.
+3. **뮤직덱 아카이브**: 추천 및 생성된 모든 BGM 히스토리를 상시 확인 가능한 프론트엔드 연동
+4. **효과음(SFX) 트리거**
+5. **BGM 자동 전환**
 
-### 🛠 실행 방법
-1. `.env` 파일에 Gemini API 키 설정.
-2. 패키지 설치: `pip install fastapi uvicorn google-generative-ai python-dotenv`.
-3. 서버 실행: `uvicorn main:app --reload`.
+
+### 시스템 구조
+사용자 → FastAPI → GPT 분석 → 상태관리 → BGM 추천 → DB → 응답
+
+
+---
+
+## ⚙️ 기술 스택
+
+### Backend
+- FastAPI
+- Python
+
+### AI
+- OpenAI GPT (gpt-4.1-mini)
+- (추후) Gemini / Lyria (Music Generation)
+
+### Database
+- SQLite (추후 Supabase 예정)
+
+### 기타
+- dotenv
+- uvicorn
+
+---
+
+## 📂 프로젝트 구조
+.
+├── main.py
+├── analysis_service.py
+├── bgm_service.py
+├── recommend_service.py
+├── premium_service.py
+├── state_manager.py
+├── database.py
+├── requirements.txt
+└── README.md
+
+---
+
+
+---
+
+## 🔧 실행 방법
+
+### 1. 가상환경 생성
+```bash
+python -m venv .venv
+```
+
+### 2. 활성화
+# Windows
+.venv\Scripts\activate
+
+# Mac/Linux
+source .venv/bin/activate
+
+
+### 3. 패키지 설치
+pip install -r requirements.txt
+
+
+### 4. 환경변수 설정
+.env 파일 생성 후 :
+OPENAI_API_KEY=your_key_here
+
+
+### 5. 서버 실행
+python -m uvicorn main:app --reload
+
+
+
+## API 예시
+**감정 분석**
+POST /api/analyze
+{
+  "session_id": "abc123",
+  "text": "검은 갑옷의 무사가 칼을 뽑았다."
+}
+
+응답: 
+{
+  "mood": ["긴장"],
+  "energy": 4,
+  "sfx": ["칼소리"],
+  "change_bgm": true,
+  "bgm_url": "..."
+}
+
+
+## 핵심 알고리즘
+**BGM 전환 로직**
+최근 3개 감정 저장
+70% 이상 동일 감정일 경우만 변경
+
+**쿨다운 시스템**
+1초 내 중복 분석 방지
+
+**실패 복구**
+GPT 실패 시 이전 결과 유지
