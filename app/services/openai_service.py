@@ -9,45 +9,14 @@ from app import config
 # 시스템 프롬프트 생성
 # ──────────────────────────────────────────────
 
+from app.core.prompts import MASTER_SYSTEM_PROMPT
+
 def build_system_prompt(style: str) -> str:
     """
-    스타일에 맞는 GPT 시스템 프롬프트(페르소나)를 생성한다.
-
-    - config.STYLE_GUIDE에서 스타일 설명을 가져온다.
-    - 없는 스타일이면 "calm"을 기본값으로 사용한다.
-    - GPT가 반드시 JSON 형식으로 응답하도록 지시를 포함한다.
-
-    Args:
-        style: 스타일 키 (예: "dramatic", "calm")
-
-    Returns:
-        GPT에 전달할 시스템 프롬프트 문자열
+    MASTER_SYSTEM_PROMPT를 반환한다.
+    style 파라미터는 하위 호환성을 위해 유지하나 현재는 사용하지 않음.
     """
-    persona = config.STYLE_GUIDE.get(style, config.STYLE_GUIDE["calm"])
-    valid_moods = ", ".join(config.VALID_MOODS)
-    common_sfx = ", ".join(config.COMMON_SFX)
-
-    return f"""
-{persona}
-
-당신은 소설 텍스트를 분석하여 반드시 아래 JSON 형식으로만 응답해야 합니다.
-절대 JSON 외의 텍스트를 포함하지 마세요.
-
-응답 형식:
-{{
-  "mood": ["감정1", "감정2"],
-  "energy": 3,
-  "sfx": ["효과음1", "효과음2"],
-  "errors": []
-}}
-
-규칙:
-- mood는 반드시 다음 목록 안에서만 선택하세요: [{valid_moods}]
-- mood는 1개 이상 3개 이하로 선택하세요.
-- energy는 {config.ENERGY_MIN}에서 {config.ENERGY_MAX} 사이의 정수입니다.
-- sfx는 텍스트 분위기에 맞는 효과음 키워드입니다. 공통 사용 가능 키워드: [{common_sfx}]
-- errors는 분석 중 문제가 있을 경우 문자열 목록으로 기록하고, 없으면 빈 배열로 두세요.
-""".strip()
+    return MASTER_SYSTEM_PROMPT
 
 
 # ──────────────────────────────────────────────

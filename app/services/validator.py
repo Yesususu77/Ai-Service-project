@@ -1,27 +1,26 @@
 from app import config
 
 
+from app.core.prompts import MOOD_ALIAS
+
 def filter_moods(mood_list: list) -> list[str]:
     """
-    GPT가 반환한 감정 목록에서 유효한 감정만 필터링한다.
-
-    - config.VALID_MOODS에 포함된 값만 남긴다.
-    - 결과가 빈 리스트면 config.DEFAULT_MOOD(["평화"])를 반환한다.
-
-    Args:
-        mood_list: GPT 응답의 mood 리스트
-
-    Returns:
-        유효한 감정 문자열 리스트
-
-    Example:
-        filter_moods(["기쁨", "unknown", "슬픔"]) -> ["기쁨", "슬픔"]
-        filter_moods(["없는감정"])                -> ["평화"]
+    GPT가 반환한 감정 목록을 필터링한다.
+    - VALID_MOODS에 있으면 그대로 사용
+    - MOOD_ALIAS에 있으면 유효 감정으로 변환
+    - 둘 다 아니면 제외
+    - 결과가 비면 DEFAULT_MOOD 반환
     """
     if not isinstance(mood_list, list):
         return config.DEFAULT_MOOD
 
-    filtered = [m for m in mood_list if m in config.VALID_MOODS]
+    filtered = []
+    for m in mood_list:
+        if m in config.VALID_MOODS:
+            filtered.append(m)
+        elif m in MOOD_ALIAS:
+            filtered.append(MOOD_ALIAS[m])
+
     return filtered if filtered else config.DEFAULT_MOOD
 
 

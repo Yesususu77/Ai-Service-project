@@ -30,9 +30,10 @@ class AnalyzeResponse(BaseModel):
     energy: int
     sfx: list[str]
     errors: list
-    bgm: dict | None        # BGM 트랙 정보 (없을 수 있음)
-    sfx_urls: list[dict]    # SFX 키워드별 URL 목록
-    is_fallback: bool = False  # 폴백 결과 여부
+    colors: list[str] = []   
+    bgm: dict | None
+    sfx_urls: list[dict]
+    is_fallback: bool = False
 
 class StyleChangeRequest(BaseModel):
     user_id: str
