@@ -5,10 +5,10 @@
 # 시스템에서 허용하는 감정 고정값 목록
 VALID_MOODS: list[str] = [
     "긴장", "로맨틱", "슬픔", "기쁨", "분노",
-    "평화", "공포", "희망", "혼란", "설렘"
+    "평화", "공포", "희망", "혼란", "설렘",
+    "액션", "신비", "코믹"  
 ]
 
-# GPT 응답에서 유효한 감정이 없을 때 사용할 기본값
 DEFAULT_MOOD: list[str] = ["평화"]
 
 # ──────────────────────────────────────────────
@@ -103,3 +103,26 @@ DEBOUNCE_THRESHOLD_CHARS: int = 100
 
 # 디바운스 대기 시간 (초)
 DEBOUNCE_WAIT_SECONDS: float = 1.5
+
+# 추가
+
+MOOD_COLORS: dict[str, str] = {
+    "긴장":   "#FF4500",
+    "로맨틱": "#FFC0CB",
+    "슬픔":   "#4682B4",
+    "기쁨":   "#FFD700",
+    "분노":   "#B22222",
+    "평화":   "#98FB98",
+    "공포":   "#4B0082",
+    "희망":   "#FFD700",
+    "혼란":   "#808080",
+    "설렘":   "#FF69B4",
+    "액션":   "#D2691E",
+    "신비":   "#9370DB",
+    "코믹":   "#ADFF2F",
+    "분석 불가": "#808080",
+}
+
+ANALYSIS_COOLDOWN: float = 1.0
+DEBOUNCE_INTERVAL: float = 1.5
+SFX_COOLDOWN_SEC: int = 30  # SFX_COOLDOWN_SECONDS와 동일값, 호환용

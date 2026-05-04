@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from app.database import engine, Base
 from app.routes.user import router as user_router
 from app.routes.analyze import router as analyze_router 
+from app.routes.music import router as music_router
 
 app = FastAPI()
 
@@ -13,6 +14,7 @@ Base.metadata.create_all(bind=engine)
 # 라우터 등록
 app.include_router(user_router, prefix="/api/user")
 app.include_router(analyze_router, prefix="/api/analyze")
+app.include_router(music_router, prefix="/api")
 
 # 환경변수 (기본값 포함)
 AI_URL = os.getenv("AI_URL", "http://ai:8001/predict")
