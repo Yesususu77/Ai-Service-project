@@ -5,8 +5,16 @@ from app.database import engine, Base
 from app.routes.user import router as user_router
 from app.routes.analyze import router as analyze_router 
 from app.routes.music import router as music_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # DB 테이블 생성
 Base.metadata.create_all(bind=engine)
