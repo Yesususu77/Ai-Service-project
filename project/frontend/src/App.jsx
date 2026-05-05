@@ -103,7 +103,7 @@ export default function App() {
   setIsChecking(true)
   setCheckResults([])
   try {
-    const response = await fetch('/api/analyze/analyze', {
+    const response = await fetch('https://backend-service-egef.onrender.com/api/analyze/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
