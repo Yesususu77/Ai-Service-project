@@ -12,11 +12,11 @@ const FONTS = [
   { name: 'Merriweather', label: 'Merriweather', family: "'Merriweather', serif" },
 ]
 
-const TRACKS = [ ]
-
 const MOOD_COLORS = {
   긴장: '#c0392b', 로맨틱: '#e84393', 평화: '#27ae60', 공포: '#8e44ad',
 }
+
+const BE_URL = 'https://backend-service-egef.onrender.com'
 
 export default function App() {
   const [isDark, setIsDark] = useState(false)
@@ -31,7 +31,7 @@ export default function App() {
   const [chapterParagraphs, setChapterParagraphs] = useState({ 1: [{ id: 1, text: '' }] })
 
   const [currentTrack, setCurrentTrack] = useState(null)
-  const [currentMood] = useState('긴장')
+  const [currentMood, setCurrentMood] = useState('평화')
   const [bgm, setBgm] = useState(true)
   const [sfx, setSfx] = useState(true)
   const [all, setAll] = useState(true)
@@ -41,10 +41,10 @@ export default function App() {
 
   const [checkResults, setCheckResults] = useState([])
   const [isChecking, setIsChecking] = useState(false)
+  const [saveStatus, setSaveStatus] = useState('')
 
   const paraRefs = useRef({})
   const paragraphs = chapterParagraphs[activeChapter] || [{ id: 1, text: '' }]
-
   const totalChars = paragraphs.reduce((acc, p) => acc + p.text.length, 0)
 
   const handleParaChange = (paraId, value) => {
@@ -98,39 +98,76 @@ export default function App() {
   }
 
   const handleSpellCheck = async () => {
-  const allText = paragraphs.map(p => p.text).join('\n')
-  if (!allText.trim()) return alert('먼저 글을 작성해주세요!')
-  setIsChecking(true)
-  setCheckResults([])
-  try {
-    const response = await fetch('https://backend-service-egef.onrender.com/api/analyze/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: allText,
-        style: 'dramatic',
-        user_id: 'guest',
-        prev_text: ''
+    const allText = paragraphs.map(p => p.text).join('\n')
+    if (!allText.trim()) return alert('먼저 글을 작성해주세요!')
+    setIsChecking(true)
+    setCheckResults([])
+    try {
+      const response = await fetch(`${BE_URL}/api/analyze/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: allText,
+          style: 'dramatic',
+          user_id: 'guest',
+          prev_text: ''
+        })
       })
-    })
-    const data = await response.json()
+      const data = await response.json()
 
-    // BE 응답의 errors 필드를 UI 카드 형식으로 변환
-    const results = (data.errors || []).map(e => ({
-      section: e.type === 'spell' ? '맞춤법' : '문법',
-      labelClass: e.type === 'spell' ? 'spelling' : 'context',
-      color: e.type === 'spell' ? '#c06060' : '#c28b82',
-      word: e.original,
-      suggestion: e.fix,
-      location: '본문'
-    }))
-    setCheckResults(results)
-  } catch (err) {
-    alert('분석 중 오류가 발생했어요.')
-  } finally {
-    setIsChecking(false)
+      // mood 업데이트
+      if (data.mood && data.mood.length > 0) {
+        setCurrentMood(data.mood[0])
+      }
+
+      const results = (data.errors || []).map(e => ({
+        section: e.type === 'spell' ? '맞춤법' : '문법',
+        labelClass: e.type === 'spell' ? 'spelling' : 'context',
+        color: e.type === 'spell' ? '#c06060' : '#c28b82',
+        word: e.original,
+        suggestion: e.fix,
+        location: '본문'
+      }))
+      setCheckResults(results)
+    } catch (err) {
+      alert('분석 중 오류가 발생했어요.')
+    } finally {
+      setIsChecking(false)
+    }
   }
-}
+
+  // 적용 버튼: 본문에서 original → fix로 교체
+  const handleApply = (word, suggestion) => {
+    setChapterParagraphs(prev => ({
+      ...prev,
+      [activeChapter]: prev[activeChapter].map(p => ({
+        ...p,
+        text: p.text.replaceAll(word, suggestion)
+      }))
+    }))
+  }
+
+  // 저장 버튼
+  const handleSave = async () => {
+    setSaveStatus('저장 중...')
+    try {
+      const allText = paragraphs.map(p => p.text).join('\n')
+      await fetch(`${BE_URL}/api/analyze/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: allText,
+          style: 'dramatic',
+          user_id: 'guest',
+          prev_text: ''
+        })
+      })
+      setSaveStatus('저장됨 ✓')
+      setTimeout(() => setSaveStatus(''), 2000)
+    } catch {
+      setSaveStatus('저장 실패')
+    }
+  }
 
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -163,7 +200,9 @@ export default function App() {
           <button className={`theme-toggle ${isDark ? 'dark-on' : 'light-on'}`} onClick={() => setIsDark(!isDark)}>
             <span className="theme-toggle-knob" />
           </button>
-          <button className="save-btn">저장</button>
+          <button className="save-btn" onClick={handleSave}>
+            {saveStatus || '저장'}
+          </button>
         </div>
       </header>
 
@@ -191,23 +230,17 @@ export default function App() {
                     onChange={e => ctrl.setVol(Number(e.target.value))}
                     className="volume-slider"
                   />
-                      <button className={`toggle ${ctrl.val ? 'on' : 'off'}`} onClick={() => ctrl.set(!ctrl.val)} />
+                  <button className={`toggle ${ctrl.val ? 'on' : 'off'}`} onClick={() => ctrl.set(!ctrl.val)} />
                 </div>
               ))}
             </div>
             <div className="audio-section track-section">
               <div className="section-label">추천 음악 목록 <span>▲</span></div>
               <div className="track-list">
-                {TRACKS.map((track, i) => (
-                  <div key={track.id} className={`track-item ${currentTrack.id === track.id ? 'active' : ''}`} onClick={() => setCurrentTrack(track)}>
-                    <span className="track-num">{String(i + 1).padStart(2, '0')}</span>
-                    <div className="track-info">
-                      <div className="track-title">{track.title}</div>
-                      <div className="track-meta">{track.duration} · {track.genre}</div>
-                      <span className="mood-tag" style={{ background: MOOD_COLORS[track.mood] + '28', color: MOOD_COLORS[track.mood] }}>{track.mood}</span>
-                    </div>
-                  </div>
-                ))}
+                {/* 트랙 데이터 없으면 안내 메시지 */}
+                {(!currentTrack) && (
+                  <div className="checking-msg">음악 데이터 준비 중</div>
+                )}
               </div>
             </div>
           </aside>
@@ -217,17 +250,15 @@ export default function App() {
         <div className="editor-panel">
           <div className="editor-topbar">
             <div className="mood-indicator">
-              <span className="mood-dot" style={{ background: MOOD_COLORS[currentMood] }} />
+              <span className="mood-dot" style={{ background: MOOD_COLORS[currentMood] || '#888' }} />
               <span className="mood-label">현재 무드 : </span>
-              <span className="mood-value" style={{ color: MOOD_COLORS[currentMood] }}>{currentMood}</span>
-              <span className="mood-sublabel"> · 2문단 연속 긴장</span>
+              <span className="mood-value" style={{ color: MOOD_COLORS[currentMood] || '#888' }}>{currentMood}</span>
             </div>
             <div className="editor-toolbar">
               <button className="tool-btn" onClick={handleSpellCheck} disabled={isChecking}>
                 {isChecking ? '검사 중...' : '맞춤법 검사'}
               </button>
 
-              {/* 글꼴 드롭다운 */}
               <div className="font-selector">
                 <button className="tool-btn font-btn" onClick={() => setShowFontMenu(!showFontMenu)}>
                   <span style={{ fontFamily: currentFont.family }}>가</span>
@@ -258,7 +289,6 @@ export default function App() {
 
           <div className="editor-scroll">
             <div className="editor-content" style={{ fontFamily: currentFont.family }}>
-
               {editingTitle ? (
                 <input
                   className="title-input"
@@ -279,7 +309,7 @@ export default function App() {
               )}
 
               <div className="story-meta">
-                {chapters.find(c => c.id === activeChapter)?.title} · 자동 저장됨 · {timeStr}
+                {chapters.find(c => c.id === activeChapter)?.title} · {saveStatus || '자동 저장됨'} · {timeStr}
               </div>
 
               {paragraphs.map((para, idx) => (
@@ -295,12 +325,6 @@ export default function App() {
                     rows={1}
                     style={{ fontFamily: currentFont.family }}
                   />
-                  {idx === 0 && para.text.length > 0 && currentTrack && (
-                    <div className="para-track">
-                      <span className="track-note">♪</span>
-                      <span className="track-name">선정된 음악 : {currentTrack.title}</span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -320,7 +344,7 @@ export default function App() {
                 <div className="checking-msg">맞춤법 검사 버튼을 눌러주세요</div>
               )}
               {checkResults.map((item, i) => (
-                <CheckCard key={i} item={item} />
+                <CheckCard key={i} item={item} onApply={handleApply} />
               ))}
               <div className="check-section">
                 <div className="sidebar-sub-title">장르 · 설정</div>
@@ -348,8 +372,9 @@ export default function App() {
   )
 }
 
-function CheckCard({ item }) {
+function CheckCard({ item, onApply }) {
   const [dismissed, setDismissed] = useState(false)
+  const [applied, setApplied] = useState(false)
   if (dismissed) return null
   return (
     <div className="check-section">
@@ -359,7 +384,13 @@ function CheckCard({ item }) {
         <div className="check-arrow">→ {item.suggestion}</div>
         <div className="check-location">{item.location}</div>
         <div className="check-actions">
-          <button className="check-btn accept">적용</button>
+          <button
+            className="check-btn accept"
+            onClick={() => { onApply(item.word, item.suggestion); setApplied(true) }}
+            disabled={applied}
+          >
+            {applied ? '적용됨 ✓' : '적용'}
+          </button>
           <button className="check-btn dismiss" onClick={() => setDismissed(true)}>무시</button>
         </div>
       </div>
