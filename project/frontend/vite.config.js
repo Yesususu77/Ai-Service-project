@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://backend:8000',  // ← 백엔드 컨테이너로 프록시
+        target: 'https://backend-service-egef.onrender.com',  // ← 백엔드 컨테이너로 프록시
         changeOrigin: true,
       }
     }
