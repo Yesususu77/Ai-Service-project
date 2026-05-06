@@ -22,6 +22,20 @@ _SUPABASE_HEADERS = {
 # 규칙: 키워드를 의미에 맞는 영단어로 변환 후 소문자_언더스코어 형식 사용
 # ──────────────────────────────────────────────
 
+# AI mood → DB emotion 변환 매핑
+MOOD_TO_EMOTION = {
+    "긴장":   "긴박",
+    "분노":   "긴박",
+    "공포":   "공포",
+    "슬픔":   "슬픔",
+    "기쁨":   "기쁨",
+    "설렘":   "기쁨",
+    "로맨틱": "기쁨",
+    "희망":   "웅장",
+    "평화":   "기타",
+    "혼란":   "기타",
+}
+
 SFX_FILE_MAP: dict[str, str] = {
     # dramatic
     "천둥":     "assets/sfx/thunder.mp3",
@@ -76,26 +90,27 @@ async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
 
+    # AI mood → DB emotion 변환
     primary_mood = mood[0] if mood else ""
+    db_emotion = MOOD_TO_EMOTION.get(primary_mood, "기타")
 
     async with httpx.AsyncClient(timeout=5) as client:
 
-        # 1차 쿼리: emotion + mood 일치
-        if primary_mood:
-            url = (
-                f"{SUPABASE_URL}/rest/v1/bgm_tracks"
-                f'?emotion=eq.{primary_mood}&limit=1&select=Title,url,emotion,genre,bpm'
-            )
-            try:
-                response = await client.get(url, headers=_SUPABASE_HEADERS)
-                response.raise_for_status()
-                results = response.json()
-                if results:
-                    return results[0]
-            except (httpx.HTTPStatusError, httpx.RequestError):
-                pass
+        # 1차 쿼리: emotion 일치
+        url = (
+            f"{SUPABASE_URL}/rest/v1/bgm_tracks"
+            f"?emotion=eq.{db_emotion}&limit=1&select=Title,url,emotion,genre,bpm"
+        )
+        try:
+            response = await client.get(url, headers=_SUPABASE_HEADERS)
+            response.raise_for_status()
+            results = response.json()
+            if results:
+                return results[0]
+        except (httpx.HTTPStatusError, httpx.RequestError):
+            pass
 
-        # 2차 쿼리: emotion 조건 없이 랜덤 1개
+        # 2차 쿼리: 아무거나 1개
         url = (
             f"{SUPABASE_URL}/rest/v1/bgm_tracks"
             f"?limit=1&select=Title,url,emotion,genre,bpm"
