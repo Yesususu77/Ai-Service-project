@@ -71,18 +71,7 @@ SFX_FILE_MAP: dict[str, str] = {
 
 async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
     """
-    Supabase의 bgm_tracks 테이블에서 mood와 energy에 맞는 BGM 트랙을 조회한다.
-
-    - 1차 쿼리: energy + mood 첫 번째 값 모두 일치하는 트랙 조회
-    - 결과 없으면 2차 쿼리: energy만 일치하는 트랙 조회
-    - 최종적으로도 없으면 None 반환
-
-    Args:
-        mood:   감정 리스트 (첫 번째 값을 우선 사용)
-        energy: 에너지 값 (1~5)
-
-    Returns:
-        BGM 트랙 dict {"id", "title", "url", "mood", "energy"} 또는 None
+    Supabase bgm_tracks 테이블에서 emotion 기준으로 BGM 트랙을 조회한다.
     """
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
@@ -91,11 +80,11 @@ async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
 
     async with httpx.AsyncClient(timeout=5) as client:
 
-        # 1차 쿼리: energy + mood 조건
+        # 1차 쿼리: emotion + mood 일치
         if primary_mood:
             url = (
                 f"{SUPABASE_URL}/rest/v1/bgm_tracks"
-                f"?energy=eq.{energy}&mood=eq.{primary_mood}&limit=1"
+                f'?emotion=eq.{primary_mood}&limit=1&select=Title,url,emotion,genre,bpm'
             )
             try:
                 response = await client.get(url, headers=_SUPABASE_HEADERS)
@@ -104,10 +93,13 @@ async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
                 if results:
                     return results[0]
             except (httpx.HTTPStatusError, httpx.RequestError):
-                return None
+                pass
 
-        # 2차 쿼리: energy 조건만
-        url = f"{SUPABASE_URL}/rest/v1/bgm_tracks?energy=eq.{energy}&limit=1"
+        # 2차 쿼리: emotion 조건 없이 랜덤 1개
+        url = (
+            f"{SUPABASE_URL}/rest/v1/bgm_tracks"
+            f"?limit=1&select=Title,url,emotion,genre,bpm"
+        )
         try:
             response = await client.get(url, headers=_SUPABASE_HEADERS)
             response.raise_for_status()
