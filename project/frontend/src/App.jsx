@@ -60,6 +60,10 @@ export default function App() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       const newId = Date.now()
+      
+      const currentPara = paragraphs.find(p => p.id === paraId)
+      if (currentPara?.text.trim()) analyzeMood(currentPara.text)
+      
       setChapterParagraphs(prev => {
         const paras = prev[activeChapter]
         const idx = paras.findIndex(p => p.id === paraId)
@@ -135,6 +139,28 @@ export default function App() {
       setIsChecking(false)
     }
   }
+
+  const analyzeMood = async (text) => {
+  if (!text.trim()) return
+  try {
+    const response = await fetch(`${BE_URL}/api/analyze/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text,
+        style: 'dramatic',
+        user_id: 'guest',
+        prev_text: ''
+      })
+    })
+    const data = await response.json()
+    if (data.mood && data.mood.length > 0) {
+      setCurrentMood(data.mood[0])
+    }
+  } catch (err) {
+    console.error('무드 분석 실패', err)
+  }
+}
 
   // 적용 버튼: 본문에서 original → fix로 교체
   const handleApply = (word, suggestion) => {
