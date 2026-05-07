@@ -140,3 +140,13 @@ async def sfx_played(req: SfxPlayedRequest):
     """
     session_manager.update_sfx_cooldown(req.user_id, req.sfx_keyword)
     return {"success": True}
+
+@router.get("/test-bgm")
+async def test_bgm():
+    from app.services import resource_matcher
+    result = await resource_matcher.fetch_bgm_track(["평화"], 3)
+    return {
+        "supabase_url": resource_matcher.SUPABASE_URL,
+        "supabase_key_exists": bool(resource_matcher.SUPABASE_KEY),
+        "bgm_result": result
+    }
