@@ -48,6 +48,7 @@ export default function App() {
   const audioRef = useRef(null)
   const [currentBgmUrl, setCurrentBgmUrl] = useState(null)
   const [currentBgmTitle, setCurrentBgmTitle] = useState('')
+  const [bgmHistory, setBgmHistory] = useState([])
   const paragraphs = chapterParagraphs[activeChapter] || [{ id: 1, text: '' }]
   const totalChars = paragraphs.reduce((acc, p) => acc + p.text.length, 0)
 
@@ -166,7 +167,12 @@ export default function App() {
     if (data.bgm && data.bgm.url) {
       setCurrentBgmUrl(data.bgm.url)
       setCurrentBgmTitle(data.bgm.Title || '')
-      console.log('BGM Title:', data.bgm.Title)  // ← 이 줄 추가
+      console.log('BGM Title:', data.bgm.Title)
+      setBgmHistory(prev => {
+        // 중복 제거 후 앞에 추가 (최대 10개)
+        const filtered = prev.filter(t => t !== (data.bgm.Title || ''))
+        return [data.bgm.Title || '', ...filtered].slice(0, 10)
+      })
       if (audioRef.current) {
         audioRef.current.src = data.bgm.url
         audioRef.current.volume = bgmVol / 100
@@ -299,36 +305,37 @@ export default function App() {
             <div className="audio-section track-section">
               <div className="section-label">추천 음악 목록 <span>▲</span></div>
               <div className="track-list">
-                {/* 트랙 데이터 없으면 안내 메시지 */}
-                {currentBgmTitle ? (
-                  <div className="track-item">
-                    <span className="track-num">♪</span>
-                    <div className="track-info">
-                      <div className="track-title">{currentBgmTitle}</div>
-                      <div className="track-meta">
-                        {isPlaying ? '재생 중' : '일시정지'}
+                {bgmHistory.length > 0 ? (
+                  bgmHistory.map((title, i) => (
+                    <div key={i} className={`track-item ${i === 0 ? 'active' : ''}`}>
+                      <span className="track-num">{String(i + 1).padStart(2, '0')}</span>
+                      <div className="track-info">
+                        <div className="track-title">{title}</div>
+                        <div className="track-meta">{i === 0 ? '재생 중' : '이전 재생'}</div>
                       </div>
+                      {i === 0 && (
+                        <button
+                          className="tool-btn"
+                          style={{ fontSize: '12px', padding: '4px 8px' }}
+                          onClick={() => {
+                            if (!audioRef.current) return
+                            if (isPlaying) {
+                              audioRef.current.pause()
+                              setIsPlaying(false)
+                            } else {
+                              audioRef.current.play()
+                              setIsPlaying(true)
+                            }
+                          }}
+                        >
+                          {isPlaying ? '⏸' : '▶'}
+                        </button>
+                      )}
                     </div>
-                    <button
-                      className="tool-btn"
-                      style={{ fontSize: '12px', padding: '4px 8px' }}
-                      onClick={() => {
-                        if (!audioRef.current) return
-                        if (isPlaying) {
-                          audioRef.current.pause()
-                          setIsPlaying(false)
-                        } else {
-                          audioRef.current.play()
-                          setIsPlaying(true)
-                        }
-                      }}
-                    >
-                      {isPlaying ? '⏸' : '▶'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="checking-msg">음악 데이터 준비 중</div>
-              )}
+                  ))
+                  ) : (
+                    <div className="checking-msg">음악 데이터 준비 중</div>
+                  )}
               </div>
             </div>
           </aside>
