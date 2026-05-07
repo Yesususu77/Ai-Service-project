@@ -46,6 +46,7 @@ export default function App() {
   const paraRefs = useRef({})
   const audioRef = useRef(null)
   const [currentBgmUrl, setCurrentBgmUrl] = useState(null)
+  const [currentBgmTitle, setCurrentBgmTitle] = useState('')
   const paragraphs = chapterParagraphs[activeChapter] || [{ id: 1, text: '' }]
   const totalChars = paragraphs.reduce((acc, p) => acc + p.text.length, 0)
 
@@ -163,6 +164,7 @@ export default function App() {
 
     if (data.bgm && data.bgm.url) {
       setCurrentBgmUrl(data.bgm.url)
+      setCurrentBgmTitle(data.bgm.Title || '')  // ← 추가
       if (audioRef.current) {
         audioRef.current.src = data.bgm.url
         audioRef.current.volume = bgmVol / 100
@@ -276,9 +278,17 @@ export default function App() {
               <div className="section-label">추천 음악 목록 <span>▲</span></div>
               <div className="track-list">
                 {/* 트랙 데이터 없으면 안내 메시지 */}
-                {(!currentTrack) && (
+                {currentBgmTitle ? (
+                  <div className="track-item">
+                    <span className="track-num">♪</span>
+                    <div className="track-info">
+                      <div className="track-title">{currentBgmTitle}</div>
+                      <div className="track-meta">재생 중</div>
+                    </div>
+                  </div>
+                ) : (
                   <div className="checking-msg">음악 데이터 준비 중</div>
-                )}
+              )}
               </div>
             </div>
           </aside>
