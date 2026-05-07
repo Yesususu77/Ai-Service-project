@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react'
 import './App.css'
-const audioRef = useRef(null)
-const [currentBgmUrl, setCurrentBgmUrl] = useState(null)
 
 const FONTS = [
   { name: '나눔명조', label: '나눔명조', family: "'Nanum Myeongjo', serif" },
@@ -46,6 +44,8 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState('')
 
   const paraRefs = useRef({})
+  const audioRef = useRef(null)
+  const [currentBgmUrl, setCurrentBgmUrl] = useState(null)
   const paragraphs = chapterParagraphs[activeChapter] || [{ id: 1, text: '' }]
   const totalChars = paragraphs.reduce((acc, p) => acc + p.text.length, 0)
 
