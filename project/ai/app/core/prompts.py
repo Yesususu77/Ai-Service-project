@@ -254,4 +254,4 @@ Examples:
 
 - NO extra text.
 
-""".strip() 이건??? 제대로 생각해
+""".strip()
