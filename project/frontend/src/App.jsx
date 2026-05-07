@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import './App.css'
+const audioRef = useRef(null)
+const [currentBgmUrl, setCurrentBgmUrl] = useState(null)
 
 const FONTS = [
   { name: '나눔명조', label: '나눔명조', family: "'Nanum Myeongjo', serif" },
@@ -154,8 +156,18 @@ export default function App() {
       })
     })
     const data = await response.json()
+
     if (data.mood && data.mood.length > 0) {
       setCurrentMood(data.mood[0])
+    }
+
+    if (data.bgm && data.bgm.url) {
+      setCurrentBgmUrl(data.bgm.url)
+      if (audioRef.current) {
+        audioRef.current.src = data.bgm.url
+        audioRef.current.volume = bgmVol / 100
+        audioRef.current.play().catch(e => console.log('재생 실패:', e))
+      }
     }
   } catch (err) {
     console.error('무드 분석 실패', err)
@@ -393,6 +405,9 @@ export default function App() {
         <span>▶ 재생 중 · {paragraphs.length}문단</span>
         <span className="char-count">공백 포함 {totalChars.toLocaleString()}자</span>
       </footer>
+
+      {/* BGM 오디오 */}
+      <audio ref={audioRef} loop />
 
     </div>
   )
