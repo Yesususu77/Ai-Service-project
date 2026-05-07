@@ -288,6 +288,9 @@ export default function App() {
                       if (ctrl.name === 'BGM' && audioRef.current) {
                         audioRef.current.muted = ctrl.val  // 현재값 반전
                       }
+                      if (ctrl.name === '전체' && audioRef.current) {  
+                        audioRef.current.muted = ctrl.val
+                      }
                     }}
                   />
               </div>
