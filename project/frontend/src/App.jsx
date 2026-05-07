@@ -164,13 +164,14 @@ export default function App() {
 
     if (data.bgm && data.bgm.url) {
       setCurrentBgmUrl(data.bgm.url)
-      setCurrentBgmTitle(data.bgm.Title || '')  // ← 추가
+      setCurrentBgmTitle(data.bgm.Title || '')
+      console.log('BGM Title:', data.bgm.Title)  // ← 이 줄 추가
       if (audioRef.current) {
         audioRef.current.src = data.bgm.url
         audioRef.current.volume = bgmVol / 100
         audioRef.current.play().catch(e => console.log('재생 실패:', e))
-      }
-    }
+  }
+}
   } catch (err) {
     console.error('무드 분석 실패', err)
   }
