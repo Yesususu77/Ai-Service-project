@@ -144,9 +144,17 @@ async def sfx_played(req: SfxPlayedRequest):
 @router.get("/test-bgm")
 async def test_bgm():
     from app.services import resource_matcher
-    result = await resource_matcher.fetch_bgm_track(["평화"], 3)
-    return {
-        "supabase_url": resource_matcher.SUPABASE_URL,
-        "supabase_key_exists": bool(resource_matcher.SUPABASE_KEY),
-        "bgm_result": result
-    }
+    import httpx
+    
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            url = f"{resource_matcher.SUPABASE_URL}/rest/v1/bgm_tracks?limit=1&select=Title,url,emotion"
+            response = await client.get(url, headers=resource_matcher._SUPABASE_HEADERS)
+            return {
+                "supabase_url": resource_matcher.SUPABASE_URL,
+                "supabase_key_exists": bool(resource_matcher.SUPABASE_KEY),
+                "status_code": response.status_code,
+                "response_text": response.text,
+            }
+    except Exception as e:
+        return {"error": str(e)}
