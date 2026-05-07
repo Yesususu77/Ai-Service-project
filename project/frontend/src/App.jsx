@@ -38,6 +38,7 @@ export default function App() {
   const [bgmVol, setBgmVol] = useState(65)
   const [sfxVol, setSfxVol] = useState(50)
   const [allVol, setAllVol] = useState(75)
+  const [isPlaying, setIsPlaying] = useState(false)
 
   const [checkResults, setCheckResults] = useState([])
   const [isChecking, setIsChecking] = useState(false)
@@ -170,6 +171,7 @@ export default function App() {
         audioRef.current.src = data.bgm.url
         audioRef.current.volume = bgmVol / 100
         audioRef.current.play().catch(e => console.log('재생 실패:', e))
+        setIsPlaying(true)
   }
 }
   } catch (err) {
@@ -268,12 +270,28 @@ export default function App() {
                     min="0"
                     max="100"
                     value={ctrl.vol}
-                    onChange={e => ctrl.setVol(Number(e.target.value))}
+                    onChange={e => {
+                      ctrl.setVol(Number(e.target.value))
+                      if (ctrl.name === 'BGM' && audioRef.current) {
+                        audioRef.current.volume = Number(e.target.value) / 100
+                      }
+                      if (ctrl.name === '전체' && audioRef.current) {
+                        audioRef.current.volume = Number(e.target.value) / 100
+                      }
+                    }}
                     className="volume-slider"
                   />
-                  <button className={`toggle ${ctrl.val ? 'on' : 'off'}`} onClick={() => ctrl.set(!ctrl.val)} />
-                </div>
-              ))}
+                  <button
+                    className={`toggle ${ctrl.val ? 'on' : 'off'}`}
+                    onClick={() => {
+                      ctrl.set(!ctrl.val)
+                      if (ctrl.name === 'BGM' && audioRef.current) {
+                        audioRef.current.muted = ctrl.val  // 현재값 반전
+                      }
+                    }}
+                  />
+              </div>
+            ))}
             </div>
             <div className="audio-section track-section">
               <div className="section-label">추천 음악 목록 <span>▲</span></div>
@@ -284,8 +302,26 @@ export default function App() {
                     <span className="track-num">♪</span>
                     <div className="track-info">
                       <div className="track-title">{currentBgmTitle}</div>
-                      <div className="track-meta">재생 중</div>
+                      <div className="track-meta">
+                        {isPlaying ? '재생 중' : '일시정지'}
+                      </div>
                     </div>
+                    <button
+                      className="tool-btn"
+                      style={{ fontSize: '12px', padding: '4px 8px' }}
+                      onClick={() => {
+                        if (!audioRef.current) return
+                        if (isPlaying) {
+                          audioRef.current.pause()
+                          setIsPlaying(false)
+                        } else {
+                          audioRef.current.play()
+                          setIsPlaying(true)
+                        }
+                      }}
+                    >
+                      {isPlaying ? '⏸' : '▶'}
+                    </button>
                   </div>
                 ) : (
                   <div className="checking-msg">음악 데이터 준비 중</div>
