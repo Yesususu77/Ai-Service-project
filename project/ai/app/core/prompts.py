@@ -92,6 +92,24 @@ Analyze the input Korean text and return a VALID JSON object for:
 
 - Maximum 2 moods only.
 
+- Prioritize the dominant emotional direction of the ENTIRE passage.
+
+- Pay special attention to the emotional tone of the ending.
+
+- Emotional contrast, existential questions, fear of loss,
+
+  fading happiness, loneliness, or uncertainty may override
+
+  initially positive expressions.
+
+Examples:
+
+- "행복하지만 오래 가지 않을 것 같다" → 슬픔
+
+- "즐거운 순간이 끝날까 두렵다" → 긴장, 슬픔
+
+- "나는 언제까지나 어린이일 수 있을까?" → 슬픔, 신비
+
 
 
 ### 2. ENERGY
