@@ -6,8 +6,7 @@ from app.routes.user import router as user_router
 from app.routes.analyze import router as analyze_router 
 from app.routes.music import router as music_router
 from fastapi.middleware.cors import CORSMiddleware
-# 확인용 임시 추가
-from fastapi import Request
+
 
 app = FastAPI()
 app.add_middleware(
@@ -41,11 +40,3 @@ def call_ai():
 
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"AI server error: {str(e)}")
-
-# 테스트용 임시 추가
-@app.post("/api/analyze/analyze")
-async def analyze(request: Request):
-    body = await request.body()
-    print(body)
-
-    return {"ok": True}
