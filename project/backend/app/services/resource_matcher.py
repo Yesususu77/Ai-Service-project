@@ -2,6 +2,7 @@ import os
 import httpx
 
 from app import config
+from urllib.parse import quote
 
 # ──────────────────────────────────────────────
 # Supabase 설정
@@ -83,23 +84,22 @@ SFX_FILE_MAP: dict[str, str] = {
 # BGM 트랙 조회
 # ──────────────────────────────────────────────
 
+from urllib.parse import quote
+
 async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
-    """
-    Supabase bgm_tracks 테이블에서 emotion 기준으로 BGM 트랙을 조회한다.
-    """
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
 
-    # AI mood → DB emotion 변환
     primary_mood = mood[0] if mood else ""
     db_emotion = MOOD_TO_EMOTION.get(primary_mood, "기타")
+    encoded_emotion = quote(db_emotion)  # ← 한글 인코딩
 
     async with httpx.AsyncClient(timeout=5) as client:
 
-        # 1차 쿼리: emotion 일치
+        # 1차 쿼리
         url = (
             f"{SUPABASE_URL}/rest/v1/bgm_tracks"
-            f"?emotion=eq.{db_emotion}&limit=1&select=Title,url,emotion,genre,bpm"
+            f"?emotion=eq.{encoded_emotion}&limit=1&select=Title,url,emotion,genre,bpm"
         )
         try:
             response = await client.get(url, headers=_SUPABASE_HEADERS)
