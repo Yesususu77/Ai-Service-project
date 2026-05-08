@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react'
+import Login from './Login'
+import GenreSelect from './GenreSelect'
 import './App.css'
 
 const FONTS = [
@@ -19,6 +21,7 @@ const MOOD_COLORS = {
 }
 
 export default function App() {
+  const [page, setPage] = useState('login') // 'login' | 'genre' | 'editor'
   const [isDark, setIsDark] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentFont, setCurrentFont] = useState(FONTS[0])
@@ -137,7 +140,8 @@ ${allText}`
 
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-
+  if (page === 'login') return <Login onLogin={() => setPage('genre')} />
+  if (page === 'genre') return <GenreSelect onStart={() => setPage('editor')} />
   return (
     <div className={`app ${isDark ? 'dark' : 'light'}`}>
 
