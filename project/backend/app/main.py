@@ -8,6 +8,9 @@ from app.routes.music import router as music_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+@app.get("/")
+def root():
+    return {"message": "server running"}
 
 # CORS 설정 (프론트엔드 연동 필수)
 app.add_middleware(
