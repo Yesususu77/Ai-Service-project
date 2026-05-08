@@ -1,13 +1,12 @@
 import os
 import httpx
-
-from app import config
+import random
+import json
 from urllib.parse import quote
 
 # ──────────────────────────────────────────────
-# Supabase 설정
+# Supabase 설정 (환경변수 관리)
 # ──────────────────────────────────────────────
-
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 
@@ -18,12 +17,8 @@ _SUPABASE_HEADERS = {
 }
 
 # ──────────────────────────────────────────────
-# SFX 키워드 → 영문 파일명 변환 규칙
-# 한국어 키워드를 영문 파일명으로 매핑
-# 규칙: 키워드를 의미에 맞는 영단어로 변환 후 소문자_언더스코어 형식 사용
+# 매핑 규칙 (AI 감정 -> DB 카테고리)
 # ──────────────────────────────────────────────
-
-# AI mood → DB emotion 변환 매핑
 MOOD_TO_EMOTION = {
     "긴장":   "긴박",
     "분노":   "긴박",
@@ -38,114 +33,89 @@ MOOD_TO_EMOTION = {
 }
 
 SFX_FILE_MAP: dict[str, str] = {
-    # dramatic
-    "천둥":     "assets/sfx/thunder.mp3",
+    "천둥": "assets/sfx/thunder.mp3",
     "심장박동": "assets/sfx/heartbeat.mp3",
-    "경고음":   "assets/sfx/warning.mp3",
-    "폭발음":   "assets/sfx/explosion.mp3",
-    "긴장음":   "assets/sfx/tension.mp3",
-
-    # calm
-    "바람":     "assets/sfx/wind.mp3",
-    "빗소리":   "assets/sfx/rain.mp3",
-    "새소리":   "assets/sfx/birds.mp3",
+    "경고음": "assets/sfx/warning.mp3",
+    "폭발음": "assets/sfx/explosion.mp3",
+    "긴장음": "assets/sfx/tension.mp3",
+    "바람": "assets/sfx/wind.mp3",
+    "빗소리": "assets/sfx/rain.mp3",
+    "새소리": "assets/sfx/birds.mp3",
     "파도소리": "assets/sfx/waves.mp3",
-    "풀벌레":   "assets/sfx/crickets.mp3",
-
-    # romantic
-    "피아노":   "assets/sfx/piano.mp3",
+    "풀벌레": "assets/sfx/crickets.mp3",
+    "피아노": "assets/sfx/piano.mp3",
     "바이올린": "assets/sfx/violin.mp3",
-    "속삭임":   "assets/sfx/whisper.mp3",
-    "설렘음":   "assets/sfx/flutter.mp3",
-    "종소리":   "assets/sfx/bell.mp3",
-
-    # horror
-    "비명":     "assets/sfx/scream.mp3",
-    "삐걱임":   "assets/sfx/creak.mp3",
-    "발소리":   "assets/sfx/footsteps.mp3",
-    "숨소리":   "assets/sfx/breathing.mp3",
+    "속삭임": "assets/sfx/whisper.mp3",
+    "설렘음": "assets/sfx/flutter.mp3",
+    "종소리": "assets/sfx/bell.mp3",
+    "비명": "assets/sfx/scream.mp3",
+    "삐걱임": "assets/sfx/creak.mp3",
+    "발소리": "assets/sfx/footsteps.mp3",
+    "숨소리": "assets/sfx/breathing.mp3",
     "으스스한음": "assets/sfx/eerie.mp3",
-
-    # action
-    "총성":     "assets/sfx/gunshot.mp3",
-    "엔진음":   "assets/sfx/engine.mp3",
-    "충돌음":   "assets/sfx/crash.mp3",
-    "사이렌":   "assets/sfx/siren.mp3",
-    "질주음":   "assets/sfx/dash.mp3",
-
-    # common
-    "클릭":     "assets/sfx/click.mp3",
-    "알림음":   "assets/sfx/notification.mp3",
-    "전환음":   "assets/sfx/transition.mp3",
+    "총성": "assets/sfx/gunshot.mp3",
+    "엔진음": "assets/sfx/engine.mp3",
+    "충돌음": "assets/sfx/crash.mp3",
+    "사이렌": "assets/sfx/siren.mp3",
+    "질주음": "assets/sfx/dash.mp3",
+    "클릭": "assets/sfx/click.mp3",
+    "알림음": "assets/sfx/notification.mp3",
+    "전환음": "assets/sfx/transition.mp3",
 }
 
-
 # ──────────────────────────────────────────────
-# BGM 트랙 조회
+# BGM 트랙 랜덤 조회 로직
 # ──────────────────────────────────────────────
-
-from urllib.parse import quote
-
 async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
     if not SUPABASE_URL or not SUPABASE_KEY:
+        print("ERROR: Supabase 설정이 누락되었습니다.")
         return None
 
-    primary_mood = mood[0] if mood else ""
+    # 1. 감정어 결정
+    primary_mood = mood[0] if mood else "평화"
     db_emotion = MOOD_TO_EMOTION.get(primary_mood, "기타")
-    encoded_emotion = quote(db_emotion)  # ← 한글 인코딩
+    encoded_emotion = quote(db_emotion)
 
     async with httpx.AsyncClient(timeout=5) as client:
-
-        # 1차 쿼리
+        # [수정 포인트] limit=1 삭제 -> 해당 감정 모든 곡 가져오기
         url = (
             f"{SUPABASE_URL}/rest/v1/bgm_tracks"
-            f"?emotion=eq.{encoded_emotion}&limit=1&select=Title,url,emotion,genre,bpm"
+            f"?emotion=eq.{encoded_emotion}&select=Title,url,emotion,genre,bpm"
         )
+        
         try:
             response = await client.get(url, headers=_SUPABASE_HEADERS)
             response.raise_for_status()
             results = response.json()
+            
             if results:
-                return results[0]
-        except (httpx.HTTPStatusError, httpx.RequestError):
-            pass
+                # [핵심] 결과 리스트 중 랜덤하게 하나 선택
+                selected_track = random.choice(results)
+                print(f"DEBUG: 감정 [{db_emotion}] 조회 성공 -> {len(results)}곡 중 '{selected_track['Title']}' 선택")
+                return selected_track
+            
+            print(f"DEBUG: 감정 [{db_emotion}]에 해당하는 곡이 DB에 없습니다.")
 
-        # 2차 쿼리: 아무거나 1개
-        url = (
-            f"{SUPABASE_URL}/rest/v1/bgm_tracks"
-            f"?limit=1&select=Title,url,emotion,genre,bpm"
-        )
+        except Exception as e:
+            print(f"DEBUG: 1차 쿼리 실패 ({db_emotion}) -> {e}")
+
+        # 2차 쿼리: 1차 실패 시 '기타' 혹은 전체에서 랜덤하게 1개
+        fallback_url = f"{SUPABASE_URL}/rest/v1/bgm_tracks?select=Title,url,emotion,genre,bpm"
         try:
-            response = await client.get(url, headers=_SUPABASE_HEADERS)
-            response.raise_for_status()
+            response = await client.get(fallback_url, headers=_SUPABASE_HEADERS)
             results = response.json()
             if results:
-                return results[0]
-        except (httpx.HTTPStatusError, httpx.RequestError):
+                return random.choice(results)
+        except Exception as e:
+            print(f"DEBUG: 최종 폴백 쿼리 실패 -> {e}")
             return None
 
     return None
 
-
 # ──────────────────────────────────────────────
-# SFX 키워드 → URL 변환
+# SFX 리스트 반환 로직
 # ──────────────────────────────────────────────
-
 def get_sfx_urls(sfx_list: list[str]) -> list[dict]:
-    """
-    SFX 키워드 목록을 실제 오디오 파일 경로로 변환한다.
-
-    - SFX_FILE_MAP에 없는 키워드는 결과에서 제외한다.
-
-    Args:
-        sfx_list: SFX 키워드 문자열 리스트
-
-    Returns:
-        [{"keyword": "천둥", "url": "assets/sfx/thunder.mp3"}, ...] 형태의 리스트
-
-    Example:
-        get_sfx_urls(["천둥", "없는키워드"]) -> [{"keyword": "천둥", "url": "assets/sfx/thunder.mp3"}]
-    """
     result = []
     for keyword in sfx_list:
         url = SFX_FILE_MAP.get(keyword)
