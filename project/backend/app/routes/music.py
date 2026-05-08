@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func # 랜덤 정렬을 위해 추가
+from sqlalchemy.sql import func
 from app.database import get_db
-from app.models import MusicDeck, Music  # Music 모델이 있다고 가정 (DB 테이블)
+from app.models import MusicDeck, BgmTrack 
 import os, json, random
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -11,34 +11,55 @@ from dotenv import load_dotenv
 load_dotenv()
 router = APIRouter()
 
-# ── BGM 추천 로직 (DB 연동 버전으로 업그레이드) ──
+# ── [상태 관리] 감정이 같으면 음악을 유지하기 위한 전역 변수 ──
+current_bgm_state = {
+    "last_mood": None,
+    "last_url": None
+}
 
 def recommend_bgm(mood_label: str, db: Session) -> str:
     """
-    고정된 리스트가 아니라, DB에 저장된 100여 곡 중 
-    해당 감정에 맞는 곡을 랜덤으로 하나 추출합니다.
+    1. 동일 감정 유지 로직: 감정이 변하지 않았으면 기존 URL 반환
+    2. Tags 검색 로직: Supabase bgm_tracks 테이블의 Tags 컬럼에서 감정 키워드 매칭
+    3. 스토리지 기반 URL 반환: 테이블의 'url' 컬럼 값을 사용하여 재생
     """
-    # 1. DB에서 해당 감정(mood)을 가진 곡들을 무작위로 하나 선택
-    track = db.query(Music).filter(Music.mood == mood_label).order_by(func.random()).first()
+    global current_bgm_state
+
+    # [1] 감정이 유지되는 경우 (재생 중인 곡 유지)
+    if mood_label == current_bgm_state["last_mood"] and current_bgm_state["last_url"]:
+        return current_bgm_state["last_url"]
+
+    # [2] 감정이 바뀌었을 경우 (새로운 곡 랜덤 추천)
+    # Tags 컬럼에서 '#희망', '#슬픔' 등 mood_label이 포함된 행을 찾음
+    track = db.query(BgmTrack).filter(
+        BgmTrack.Tags.like(f"%{mood_label}%")
+    ).order_by(func.random()).first()
     
-    # 2. 만약 해당 감정에 맞는 곡이 DB에 없다면 '평화' 감정에서 랜덤 추출 (예외 방지)
+    # [3] 안전장치: 해당 감정의 곡이 없을 경우 '잔잔' 태그로 대체 검색
     if not track:
-        track = db.query(Music).filter(Music.mood == "평화").order_by(func.random()).first()
+        track = db.query(BgmTrack).filter(
+            BgmTrack.Tags.like("%잔잔%")
+        ).order_by(func.random()).first()
     
-    # 3. 곡이 존재하면 해당 URL 반환, 아예 없으면 기본 fallback URL 반환
-    if track:
-        return track.music_url
-    return "https://storage.vibe.com/default_calm.mp3"
+    # [4] URL 결정
+    # 테이블의 url 컬럼에 스토리지의 Public URL이 이미 들어가 있으므로 그대로 사용
+    new_url = track.url if track else "https://storage.vibe.com/default_calm.mp3"
+
+    # [5] 상태 업데이트 (다음 비교를 위해)
+    current_bgm_state["last_mood"] = mood_label
+    current_bgm_state["last_url"] = new_url
+
+    return new_url
 
 
-# ── 내 음악 조회 ──
+# ── 내 음악 조회 (저장된 덱 확인) ──
 @router.get("/my-music")
 def my_music(user_id: int, db: Session = Depends(get_db)):
     items = db.query(MusicDeck).filter(MusicDeck.user_id == user_id).all()
     return {"items": items}
 
 
-# ── 음악 덱에 저장 (내부 유틸) ──
+# ── 음악 덱에 저장 유틸 ──
 def save_to_deck(db: Session, user_id: int, m_type: str,
                  title: str, mood: str, text: str, url: str):
     item = MusicDeck(
@@ -49,7 +70,7 @@ def save_to_deck(db: Session, user_id: int, m_type: str,
     db.commit()
 
 
-# ── 프리미엄: 챕터 테마 생성 ──
+# ── 프리미엄: 챕터 테마 생성 (OpenAI 연동) ──
 class PremiumRequest(BaseModel):
     content: str
     tokens: int
@@ -62,31 +83,29 @@ async def generate_chapter_theme(data: PremiumRequest, db: Session = Depends(get
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    # GPT에게 더 명확한 JSON 형식을 요구하도록 프롬프트 보강
     prompt = f"""
-    Analyze the following novel content and provide a theme song metadata in JSON format.
-    Content: {data.content}
+    소설의 분위기를 분석하여 음악 테마 JSON을 생성하세요.
+    내용: {data.content}
     
-    Return ONLY JSON:
+    JSON 형식만 응답:
     {{
-     "theme_name": "Something Creative",
-     "summary_mood": "Overall Emotion",
-     "lyria_prompt": "Detailed musical description for AI generation"
+     "theme_name": "창의적인 제목",
+     "summary_mood": "핵심 감정",
+     "lyria_prompt": "음악 생성을 위한 구체적인 영어 프롬프트"
     }}
     """
     
     try:
-        # 비동기 처리가 권장되나 현재 구조에 맞춰 작성
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            response_format={ "type": "json_object" } # JSON 모드 강제 (GPT-4o 지원)
+            response_format={ "type": "json_object" }
         )
         
         result = json.loads(response.choices[0].message.content)
         
-        # 실제 Lyria API 연동 전까지는 해시 기반의 가상 URL 생성
-        music_url = f"https://storage.vibe.com/generated/{random.randint(1000, 9999)}.mp3"
+        # Lyria 실 생성 전 가상 URL (랜덤 식별자 추가)
+        music_url = f"https://storage.vibe.com/generated/theme_{random.randint(100, 999)}.mp3"
         
         save_to_deck(db, data.user_id, "PREMIUM",
                      result.get("theme_name"), result.get("summary_mood"),
