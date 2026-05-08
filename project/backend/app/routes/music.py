@@ -19,63 +19,60 @@ current_bgm_state = {
 }
 
 def recommend_bgm(mood_label: str, db: Session) -> str:
-    """
-    같은 감정이면 현재 곡 유지.
-    다른 감정으로 바뀌었다가 다시 돌아오면 이전 곡 제외 후 새 곡 선택.
-    """
-
     global current_bgm_state
 
-    # [1] 같은 감정이면 현재 곡 유지
+    print("CURRENT MOOD =", mood_label)
+
+    # 같은 mood면 현재 곡 유지
     if (
         mood_label == current_bgm_state["last_mood"]
         and current_bgm_state["last_url"]
     ):
+        print("KEEP CURRENT MUSIC")
         return current_bgm_state["last_url"]
 
-    # [2] 이전에 이 mood에서 사용했던 곡 기억
+    # 이전에 같은 mood에서 사용했던 곡
     recent_url = current_bgm_state["recent_tracks"].get(mood_label)
 
-    # [3] mood에 맞는 곡 전체 조회
+    # emotion 컬럼 기준 조회
     tracks = db.query(BgmTrack).filter(
-        BgmTrack.Tags.like(f"%{mood_label}%")
+        BgmTrack.emotion == mood_label
     ).all()
 
-    # [4] 직전에 같은 mood에서 썼던 곡 제외
+    print("TRACK COUNT =", len(tracks))
+
+    # 직전 곡 제외
     if recent_url:
         tracks = [t for t in tracks if t.url != recent_url]
 
-    # [5] 남은 곡 없으면 전체 허용
+    # 곡 없으면 전체 허용
     if not tracks:
         tracks = db.query(BgmTrack).filter(
-            BgmTrack.Tags.like(f"%{mood_label}%")
+            BgmTrack.emotion == mood_label
         ).all()
 
-    # [6] fallback
+    # fallback
     if not tracks:
         tracks = db.query(BgmTrack).filter(
-            BgmTrack.Tags.like("%잔잔%")
+            BgmTrack.emotion == "평화"
         ).all()
 
-    # [7] 랜덤 선택
     track = random.choice(tracks) if tracks else None
 
-    # [8] URL 결정
     new_url = (
         track.url
         if track
         else "https://storage.vibe.com/default_calm.mp3"
     )
 
-    # [9] 최근 기록 저장
     current_bgm_state["recent_tracks"][mood_label] = new_url
 
-    # [10] 현재 상태 업데이트
     current_bgm_state["last_mood"] = mood_label
     current_bgm_state["last_url"] = new_url
 
-    return new_url
+    print("NEW MUSIC =", new_url)
 
+    return new_url
 # ── 내 음악 조회 (저장된 덱 확인) ──
 @router.get("/my-music")
 def my_music(user_id: int, db: Session = Depends(get_db)):
