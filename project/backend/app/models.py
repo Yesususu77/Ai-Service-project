@@ -1,18 +1,15 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from .database import Base
 
 class User(Base):
     __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
+    nickname = Column(String)
 
-    id = Column(Integer, primary_key=True, index=True)  # 고유 식별번호
-    username = Column(String, unique=True, index=True)  # 로그인 ID
-    password = Column(String)  # 비밀번호 (해시 저장)
-    nickname = Column(String)  # 이름(닉네임)
-
-# 기존 User 모델 아래에 추가
 class MusicDeck(Base):
     __tablename__ = "music_deck"
-
     id         = Column(Integer, primary_key=True, index=True)
     user_id    = Column(Integer, index=True)
     type       = Column(String)   # "FREE" | "PREMIUM"
@@ -21,3 +18,17 @@ class MusicDeck(Base):
     input_log  = Column(String)
     music_url  = Column(String)
     created_at = Column(String, default="CURRENT_TIMESTAMP")
+
+# ─── 이 부분이 빠져있어서 에러가 난 겁니다! ───
+class BgmTrack(Base):
+    __tablename__ = "bgm_tracks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    Title = Column(String)
+    bpm = Column(Integer)
+    emotion = Column(String)
+    genre = Column(String)
+    Tags = Column(Text)   # 아까 캡처에서 본 Tags 컬럼
+    url = Column(String)    # 아까 캡처에서 본 url 컬럼
+    safe_filename = Column(String)
+    license = Column(String)
