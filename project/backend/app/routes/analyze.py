@@ -49,7 +49,7 @@ async def analyze(req: AnalyzeRequest):
 
     # c) OpenAI API 호출
     raw = await openai_service.call_openai_with_retry(text, style)
-    print("RAW GPT RESULT =", raw)
+  
 
     # d) 최신 요청 여부 확인
     if not session_manager.is_latest_request(user_id, request_id):
