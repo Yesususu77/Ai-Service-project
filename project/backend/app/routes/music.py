@@ -14,43 +14,67 @@ router = APIRouter()
 # ── [상태 관리] 감정이 같으면 음악을 유지하기 위한 전역 변수 ──
 current_bgm_state = {
     "last_mood": None,
-    "last_url": None
+    "last_url": None,
+    "recent_tracks": {}
 }
 
 def recommend_bgm(mood_label: str, db: Session) -> str:
     """
-    1. 동일 감정 유지 로직: 감정이 변하지 않았으면 기존 URL 반환
-    2. Tags 검색 로직: Supabase bgm_tracks 테이블의 Tags 컬럼에서 감정 키워드 매칭
-    3. 스토리지 기반 URL 반환: 테이블의 'url' 컬럼 값을 사용하여 재생
+    같은 감정이면 현재 곡 유지.
+    다른 감정으로 바뀌었다가 다시 돌아오면 이전 곡 제외 후 새 곡 선택.
     """
+
     global current_bgm_state
 
-    # [1] 감정이 유지되는 경우 (재생 중인 곡 유지)
-    if mood_label == current_bgm_state["last_mood"] and current_bgm_state["last_url"]:
+    # [1] 같은 감정이면 현재 곡 유지
+    if (
+        mood_label == current_bgm_state["last_mood"]
+        and current_bgm_state["last_url"]
+    ):
         return current_bgm_state["last_url"]
 
-    # [2] 감정이 바뀌었을 경우 (새로운 곡 랜덤 추천)
-    # Tags 컬럼에서 '#희망', '#슬픔' 등 mood_label이 포함된 행을 찾음
-    track = db.query(BgmTrack).filter(
-        BgmTrack.Tags.like(f"%{mood_label}%")
-    ).order_by(func.random()).first()
-    
-    # [3] 안전장치: 해당 감정의 곡이 없을 경우 '잔잔' 태그로 대체 검색
-    if not track:
-        track = db.query(BgmTrack).filter(
-            BgmTrack.Tags.like("%잔잔%")
-        ).order_by(func.random()).first()
-    
-    # [4] URL 결정
-    # 테이블의 url 컬럼에 스토리지의 Public URL이 이미 들어가 있으므로 그대로 사용
-    new_url = track.url if track else "https://storage.vibe.com/default_calm.mp3"
+    # [2] 이전에 이 mood에서 사용했던 곡 기억
+    recent_url = current_bgm_state["recent_tracks"].get(mood_label)
 
-    # [5] 상태 업데이트 (다음 비교를 위해)
+    # [3] mood에 맞는 곡 전체 조회
+    tracks = db.query(BgmTrack).filter(
+        BgmTrack.Tags.like(f"%{mood_label}%")
+    ).all()
+
+    # [4] 직전에 같은 mood에서 썼던 곡 제외
+    if recent_url:
+        tracks = [t for t in tracks if t.url != recent_url]
+
+    # [5] 남은 곡 없으면 전체 허용
+    if not tracks:
+        tracks = db.query(BgmTrack).filter(
+            BgmTrack.Tags.like(f"%{mood_label}%")
+        ).all()
+
+    # [6] fallback
+    if not tracks:
+        tracks = db.query(BgmTrack).filter(
+            BgmTrack.Tags.like("%잔잔%")
+        ).all()
+
+    # [7] 랜덤 선택
+    track = random.choice(tracks) if tracks else None
+
+    # [8] URL 결정
+    new_url = (
+        track.url
+        if track
+        else "https://storage.vibe.com/default_calm.mp3"
+    )
+
+    # [9] 최근 기록 저장
+    current_bgm_state["recent_tracks"][mood_label] = new_url
+
+    # [10] 현재 상태 업데이트
     current_bgm_state["last_mood"] = mood_label
     current_bgm_state["last_url"] = new_url
 
     return new_url
-
 
 # ── 내 음악 조회 (저장된 덱 확인) ──
 @router.get("/my-music")
