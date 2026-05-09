@@ -30,8 +30,6 @@ export default function App() {
   const [currentFont, setCurrentFont] = useState(FONTS[0])
   const [showFontMenu, setShowFontMenu] = useState(false)
 
-  const [chapters, setChapters] = useState([{ id: 1, title: '1장' }])
-  const [activeChapter, setActiveChapter] = useState(1)
   const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
   const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
   const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
