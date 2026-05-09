@@ -21,6 +21,8 @@ const MOOD_COLORS = {
 const BE_URL = 'https://backend-service-egef.onrender.com'
 
 export default function App() {
+  const savedData = JSON.parse(localStorage.getItem('muse_save') || 'null')
+  
   const [page, setPage] = useState('login')
   const [selectedGenre, setSelectedGenre] = useState(null)
   const [isDark, setIsDark] = useState(false)
@@ -30,9 +32,9 @@ export default function App() {
 
   const [chapters, setChapters] = useState([{ id: 1, title: '1장' }])
   const [activeChapter, setActiveChapter] = useState(1)
-  const [storyTitle, setStoryTitle] = useState('')
-  const [editingTitle, setEditingTitle] = useState(false)
-  const [chapterParagraphs, setChapterParagraphs] = useState({ 1: [{ id: 1, text: '' }] })
+  const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
+  const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
+  const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
 
   const [currentTrack, setCurrentTrack] = useState(null)
   const [currentMood, setCurrentMood] = useState('평화')
@@ -201,26 +203,21 @@ export default function App() {
   }
 
   // 저장 버튼
-  const handleSave = async () => {
-    setSaveStatus('저장 중...')
-    try {
-      const allText = paragraphs.map(p => p.text).join('\n')
-      await fetch(`${BE_URL}/api/analyze/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: allText,
-          style: 'dramatic',
-          user_id: 'guest',
-          prev_text: ''
-        })
-      })
-      setSaveStatus('저장됨 ✓')
-      setTimeout(() => setSaveStatus(''), 2000)
-    } catch {
-      setSaveStatus('저장 실패')
+  const handleSave = () => {
+  try {
+    const saveData = {
+      storyTitle,
+      chapters,
+      chapterParagraphs,
+      savedAt: new Date().toLocaleString('ko-KR')
     }
+    localStorage.setItem('muse_save', JSON.stringify(saveData))
+    setSaveStatus('저장됨 ✓')
+    setTimeout(() => setSaveStatus(''), 2000)
+  } catch {
+    setSaveStatus('저장 실패')
   }
+}
 
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
