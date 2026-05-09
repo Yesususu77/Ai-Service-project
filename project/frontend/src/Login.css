@@ -1,0 +1,245 @@
+.login-page {
+  min-height: 100vh;
+  background: #f2ece8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow-y: auto;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo {
+  font-size: 32px;
+  font-weight: 700;
+  color: #3a3128;
+  font-family: 'Noto Serif KR', serif;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.login-beta {
+  font-size: 12px;
+  font-weight: 400;
+  border: 1px solid #9a8070;
+  color: #9a8070;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.login-sub {
+  font-size: 14px;
+  color: #9a8878;
+  margin-top: 8px;
+  letter-spacing: 2px;
+}
+
+.login-card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.login-tabs {
+  display: flex;
+  background: #f0ebe7;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #9a8878;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-tab.active {
+  background: white;
+  color: #3a3128;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 소셜 로그인 */
+.social-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.social-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.2s;
+}
+
+.social-btn:hover { opacity: 0.88; }
+
+.social-btn.kakao {
+  background: #FEE500;
+  color: #3a3128;
+}
+
+.social-btn.google {
+  background: white;
+  color: #3a3128;
+  border: 1.5px solid #e8e0d8;
+}
+
+.social-icon {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 구분선 */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: #c0b0a8;
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e8e0d8;
+}
+
+/* 폼 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-label {
+  font-size: 13px;
+  color: #5a4a3a;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #e8e0d8;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #3a3128;
+  outline: none;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.login-input:focus { border-color: #c28b82; }
+.login-input::placeholder { color: #c0b0a8; }
+
+/* 동의 박스 */
+.agree-box {
+  background: #faf7f5;
+  border: 1px solid #e8e0d8;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 4px;
+}
+
+.agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #3a3128;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.agree-row input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: #c28b82;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.agree-required {
+  color: #c28b82;
+  font-size: 11px;
+}
+
+.agree-detail {
+  font-size: 11px;
+  color: #9a8878;
+  line-height: 1.7;
+  padding-left: 22px;
+}
+
+.agree-link {
+  color: #c28b82;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.login-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 16px;
+  background: #c28b82;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.login-btn:hover { opacity: 0.88; }
+
+.login-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-footer p {
+  font-size: 12px;
+  color: #b0a098;
+  line-height: 1.8;
+}
