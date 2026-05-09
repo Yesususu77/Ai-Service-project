@@ -33,6 +33,8 @@ export default function App() {
   const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
   const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
   const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
+  const [activeChapter, setActiveChapter] = useState(1)       
+  const [editingTitle, setEditingTitle] = useState(false)     
 
   const [currentTrack, setCurrentTrack] = useState(null)
   const [currentMood, setCurrentMood] = useState('평화')
