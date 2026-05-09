@@ -448,17 +448,21 @@ export default function App() {
               {checkResults.map((item, i) => (
                 <CheckCard key={i} item={item} onApply={handleApply} />
               ))}
-              <div className="check-section">
-                <div className="sidebar-sub-title">장르 · 설정</div>
-                <div className="genre-grid">
-                  {[['장르', '스릴러'], ['배경', '현대 도시'], ['시점', '3인칭'], ['무드 전환', '3문단 후']].map(([k, v]) => (
-                    <div className="genre-row" key={k}>
-                      <span className="genre-key">{k}</span>
-                      <span className="genre-val">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="check-section">
+              <div className="sidebar-sub-title">음악 장르</div>
+              <div className="genre-grid">
+                {selectedGenre ? (
+                  <div className="genre-row">
+                    <span className="genre-key">선택 장르</span>
+                    <span className="genre-val">{selectedGenre}</span>
+                  </div>
+                ) : (
+                  <div className="genre-row">
+                    <span className="genre-key">장르 미선택</span>
+                  </div>
+                )}
+            </div>
+          </div>
             </div>
           </aside>
         )}
