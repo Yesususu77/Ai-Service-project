@@ -63,7 +63,7 @@ export default function GenreSelect({ onStart }) {
         </div>
       </div>
 
-      <button className="genre-start-btn" onClick={onStart}>
+      <button className="genre-start-btn" onClick={() => onStart(selected)}>
         집필 시작하기 →
       </button>
     </div>
