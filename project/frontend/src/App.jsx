@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import './App.css'
+import Login from './Login'
+import GenreSelect from './GenreSelect'
 
 const FONTS = [
   { name: '나눔명조', label: '나눔명조', family: "'Nanum Myeongjo', serif" },
@@ -19,6 +21,8 @@ const MOOD_COLORS = {
 const BE_URL = 'https://backend-service-egef.onrender.com'
 
 export default function App() {
+  const [page, setPage] = useState('login')
+  const [selectedGenre, setSelectedGenre] = useState(null)
   const [isDark, setIsDark] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentFont, setCurrentFont] = useState(FONTS[0])
@@ -220,6 +224,9 @@ export default function App() {
 
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
+
+  if (page === 'login') return <Login onLogin={() => setPage('genre')} />
+  if (page === 'genre') return <GenreSelect onStart={(genre) => { setSelectedGenre(genre); setPage('editor') }} />
 
   return (
     <div className={`app ${isDark ? 'dark' : 'light'}`}>
