@@ -1,3 +1,10 @@
+html, body {
+  height: 100%;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+}
+
 .login-page {
   min-height: 100vh;
   background: #f2ece8;
@@ -8,7 +15,6 @@
   padding: 40px 20px;
   font-family: 'Noto Sans KR', sans-serif;
   overflow-y: auto;
-  padding: 20px;
   box-sizing: border-box;
 }
 
