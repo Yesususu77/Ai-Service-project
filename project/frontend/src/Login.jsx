@@ -12,6 +12,10 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = async () => {
     if (tab === 'signup' && !agreed) return
+    if (!id.trim()) return alert('아이디를 입력해주세요.')
+    if (!pw.trim()) return alert('비밀번호를 입력해주세요.')
+    if (tab === 'signup' && !nickname.trim()) return alert('닉네임을 입력해주세요.')
+    if (tab === 'signup' && !agreed) return alert('이용약관에 동의해주세요.')
     try {
       const endpoint = tab === 'login' ? '/api/user/login' : '/api/user/signup'
       const body = tab === 'login'
