@@ -8,6 +8,8 @@
   padding: 40px 20px;
   font-family: 'Noto Sans KR', sans-serif;
   overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .login-header {
