@@ -7,15 +7,17 @@ export default function Login({ onLogin }) {
   const [pw, setPw] = useState('')
   const [nickname, setNickname] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   const BE_URL = 'https://backend-service-egef.onrender.com'
 
   const handleSubmit = async () => {
-    if (tab === 'signup' && !agreed) return
-    if (!id.trim()) return alert('아이디를 입력해주세요.')
-    if (!pw.trim()) return alert('비밀번호를 입력해주세요.')
-    if (tab === 'signup' && !nickname.trim()) return alert('닉네임을 입력해주세요.')
-    if (tab === 'signup' && !agreed) return alert('이용약관에 동의해주세요.')
+    setErrorMsg('')
+    if (!id.trim()) { setErrorMsg('아이디를 입력해주세요.'); return }
+    if (!pw.trim()) { setErrorMsg('비밀번호를 입력해주세요.'); return }
+    if (tab === 'signup' && !nickname.trim()) { setErrorMsg('닉네임을 입력해주세요.'); return }
+    if (tab === 'signup' && !agreed) { setErrorMsg('이용약관에 동의해주세요.'); return }
+
     try {
       const endpoint = tab === 'login' ? '/api/user/login' : '/api/user/signup'
       const body = tab === 'login'
@@ -29,12 +31,18 @@ export default function Login({ onLogin }) {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.detail || '오류가 발생했어요.')
+        if (err.detail === 'Invalid credentials') {
+          setErrorMsg('아이디 또는 비밀번호가 틀렸습니다. 다시 입력해주세요.')
+        } else if (err.detail === 'Username already exists') {
+          setErrorMsg('이미 사용 중인 아이디입니다.')
+        } else {
+          setErrorMsg(err.detail || '오류가 발생했어요.')
+        }
         return
       }
       onLogin()
     } catch {
-      alert('서버 연결 오류가 발생했어요.')
+      setErrorMsg('서버 연결 오류가 발생했어요.')
     }
   }
 
@@ -108,6 +116,12 @@ export default function Login({ onLogin }) {
             </div>
           )}
 
+          {errorMsg && (
+            <p style={{ color: '#c06060', fontSize: '13px', margin: '4px 0 8px' }}>
+              {errorMsg}
+            </p>
+          )}
+          
           <button
             className="login-btn"
             onClick={handleSubmit}
