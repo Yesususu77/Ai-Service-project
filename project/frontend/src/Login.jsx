@@ -7,6 +7,32 @@ export default function Login({ onLogin }) {
   const [pw, setPw] = useState('')
   const [agreed, setAgreed] = useState(false)
 
+  const BE_URL = 'https://backend-service-egef.onrender.com'
+
+  const handleSubmit = async () => {
+    if (tab === 'signup' && !agreed) return
+    try {
+      const endpoint = tab === 'login' ? '/api/user/login' : '/api/user/signup'
+      const body = tab === 'login'
+        ? { username: id, password: pw }
+        : { username: id, password: pw, nickname: id }
+
+      const res = await fetch(`${BE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.detail || '오류가 발생했어요.')
+        return
+      }
+      onLogin()
+    } catch {
+      alert('서버 연결 오류가 발생했어요.')
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="login-header">
@@ -67,7 +93,7 @@ export default function Login({ onLogin }) {
 
           <button
             className="login-btn"
-            onClick={onLogin}
+            onClick={handleSubmit}
             disabled={tab === 'signup' && !agreed}
             style={{ opacity: tab === 'signup' && !agreed ? 0.5 : 1 }}
           >
