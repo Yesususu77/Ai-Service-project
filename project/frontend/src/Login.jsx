@@ -5,6 +5,7 @@ export default function Login({ onLogin }) {
   const [tab, setTab] = useState('login')
   const [id, setId] = useState('')
   const [pw, setPw] = useState('')
+  const [nickname, setNickname] = useState('')
   const [agreed, setAgreed] = useState(false)
 
   const BE_URL = 'https://backend-service-egef.onrender.com'
@@ -15,7 +16,7 @@ export default function Login({ onLogin }) {
       const endpoint = tab === 'login' ? '/api/user/login' : '/api/user/signup'
       const body = tab === 'login'
         ? { username: id, password: pw }
-        : { username: id, password: pw, nickname: id }
+        : { username: id, password: pw, nickname: nickname || id }
 
       const res = await fetch(`${BE_URL}${endpoint}`, {
         method: 'POST',
@@ -77,6 +78,18 @@ export default function Login({ onLogin }) {
             value={pw}
             onChange={e => setPw(e.target.value)}
           />
+
+          {tab === 'signup' && (
+            <>
+              <label className="login-label">닉네임</label>
+              <input
+                className="login-input"
+                placeholder="닉네임을 입력하세요"
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+              />
+            </>
+          )}
 
           {tab === 'signup' && (
             <div className="agree-box">
