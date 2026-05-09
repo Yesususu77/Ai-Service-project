@@ -3,6 +3,7 @@ uvicorn
 requests
 sqlalchemy==2.0.49
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 httpx>=0.27.0
 python-dotenv>=1.0.0
 openai
