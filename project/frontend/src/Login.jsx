@@ -81,6 +81,7 @@ export default function Login({ onLogin }) {
             placeholder="아이디를 입력하세요"
             value={id}
             onChange={e => setId(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           />
           <label className="login-label">비밀번호</label>
           <input
@@ -89,6 +90,7 @@ export default function Login({ onLogin }) {
             placeholder="비밀번호를 입력하세요"
             value={pw}
             onChange={e => setPw(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           />
 
           {tab === 'signup' && (
