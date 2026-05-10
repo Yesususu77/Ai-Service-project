@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import Login from './Login'
 import GenreSelect from './GenreSelect'
+import MyWritings from './MyWritings'
+import Feedback from './Feedback'
 import './App.css'
 
 const FONTS = [
@@ -21,7 +23,7 @@ const MOOD_COLORS = {
 }
 
 export default function App() {
-  const [page, setPage] = useState('login') // 'login' | 'genre' | 'editor'
+  const [page, setPage] = useState('login')
   const [isDark, setIsDark] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentFont, setCurrentFont] = useState(FONTS[0])
@@ -140,8 +142,10 @@ ${allText}`
 
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-  if (page === 'login') return <Login onLogin={() => setPage('genre')} />
+  if (page === 'login') return <Login onLogin={() => setPage('writings')} />
+  if (page === 'writings') return <MyWritings onContinue={() => setPage('genre')} onNewWrite={() => setPage('genre')} />
   if (page === 'genre') return <GenreSelect onStart={() => setPage('editor')} />
+  if (page === 'feedback') return <Feedback onDone={() => setPage('editor')} />
   return (
     <div className={`app ${isDark ? 'dark' : 'light'}`}>
 
@@ -211,6 +215,9 @@ ${allText}`
                     <div className="track-info">
                       <div className="track-title">{track.title}</div>
                       <div className="track-meta">{track.duration} · {track.genre}</div>
+                      {currentTrack?.id !== track.id && (
+                      <button className="track-replay-btn" onClick={() => setCurrentTrack(track)}>▶ 다시 듣기</button>
+                      )}
                       <span className="mood-tag" style={{ background: MOOD_COLORS[track.mood] + '28', color: MOOD_COLORS[track.mood] }}>{track.mood}</span>
                     </div>
                   </div>
@@ -340,6 +347,16 @@ ${allText}`
                   ))}
                 </div>
               </div>
+            </div>
+            {/* 하단 버튼들 */}
+          <div className="sidebar-bottom">
+            <div className="sidebar-bottom-row">
+              <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>글 목록</button>
+              <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>새로쓰기</button>
+            </div>
+              <button className="sidebar-theme-btn" onClick={() => setPage('feedback')}>
+                 테마곡 생성 / 피드백
+              </button>
             </div>
           </aside>
         )}

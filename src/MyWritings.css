@@ -1,0 +1,116 @@
+.writings-page {
+  min-height: 100vh;
+  background: #f2ece8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow-y: auto;
+}
+
+.writings-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.writings-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #3a3128;
+  font-family: 'Noto Serif KR', serif;
+  margin-bottom: 8px;
+}
+
+.writings-sub {
+  font-size: 14px;
+  color: #9a8878;
+}
+
+.writings-card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.writings-section-title {
+  font-size: 13px;
+  color: #9a8878;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.writings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.writing-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #faf7f5;
+  border-radius: 12px;
+  border: 1px solid #e8e0d8;
+  transition: border-color 0.2s;
+}
+
+.writing-item:hover { border-color: #c28b82; }
+
+.writing-info { flex: 1; }
+
+.writing-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3a3128;
+  margin-bottom: 4px;
+  font-family: 'Noto Serif KR', serif;
+}
+
+.writing-meta {
+  font-size: 11px;
+  color: #9a8878;
+}
+
+.writing-continue-btn {
+  background: #c28b82;
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.writing-continue-btn:hover { opacity: 0.88; }
+
+.writings-new-btn {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: 2px dashed #e8d0cc;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c28b82;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.writings-new-btn:hover {
+  background: #fdf5f3;
+  border-color: #c28b82;
+}

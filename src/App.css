@@ -314,3 +314,61 @@ body { font-family: var(--font-ui); font-size: 14px; height: 100vh; overflow: hi
 .volume-slider::-webkit-slider-thumb:active {
   cursor: grabbing;
 }
+/* 사이드바 하단 버튼 */
+.sidebar-bottom {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.sidebar-bottom-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar-sm-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sidebar-sm-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.sidebar-theme-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sidebar-theme-btn:hover { background: var(--accent); color: white; }
+
+/* 다시 듣기 버튼 */
+.track-replay-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font-ui);
+}
+
+.track-replay-btn:hover { text-decoration: underline; }

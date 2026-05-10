@@ -63,9 +63,14 @@ export default function GenreSelect({ onStart }) {
         </div>
       </div>
 
-      <button className="genre-start-btn" onClick={onStart}>
-        집필 시작하기 →
-      </button>
+        <div className="genre-btn-row">
+          <button className="genre-start-btn" onClick={onStart}>
+            집필 시작하기 →
+          </button>
+          <button className="genre-skip-btn" onClick={onStart}>
+            선택 안하고 바로 시작할래요
+        </button>
+        </div>
     </div>
   )
 }
