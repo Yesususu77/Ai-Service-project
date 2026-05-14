@@ -29,3 +29,17 @@ def save_feedback(data: FeedbackCreate):
         return {"success": False, "error": str(e)}
     finally:
         db.close()
+
+@router.get("/feedback/{username}")
+def get_feedback(username: str):
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            text("SELECT * FROM feedback WHERE username = :username"),
+            {"username": username}
+        ).fetchone()
+        if result:
+            return dict(result._mapping)
+        return {}
+    finally:
+        db.close()
