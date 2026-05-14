@@ -251,6 +251,13 @@ export default function App() {
       setActiveChapter(1)
       localStorage.setItem('muse_current', w.id)
       setPage('editor')
+      setBgmHistory([])
+      setCurrentBgmTitle('')
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      }
+      setIsPlaying(false)
     }}
     onNewWrite={() => {
       setCurrentWritingId(null)
@@ -261,6 +268,13 @@ export default function App() {
       setActiveChapter(1)
       localStorage.removeItem('muse_current')
       setPage('genre')
+      setBgmHistory([])
+      setCurrentBgmTitle('')
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      }
+      setIsPlaying(false)
     }}
   />
 )
