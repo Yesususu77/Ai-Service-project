@@ -5,6 +5,7 @@ const PURPOSES = ['작가', '취미', '학생', '직장인', '기타']
 const AGE_GROUPS = ['10대', '20대', '30대', '40대', '50대 이상']
 
 export default function Feedback({ onDone }) {
+  const BE_URL = 'https://backend-service-egef.onrender.com'
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [age, setAge] = useState('')
@@ -13,6 +14,29 @@ export default function Feedback({ onDone }) {
   const [improvements, setImprovements] = useState('')
   const [recommend, setRecommend] = useState(null)
   const [submitted, setSubmitted] = useState(false)
+
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleSubmit = async () => {        
+    if (rating === 0) return
+    try {
+      await fetch(`${BE_URL}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating,
+          age,
+          purpose,
+          satisfactions: satisfactions.join(', '),
+          improvements,
+          recommend
+        })
+      })
+    } catch (e) {
+      console.error('피드백 저장 실패', e)
+    }
+    setSubmitted(true)
+  }                                          
 
   const SATISFACTION_OPTIONS = [
     'BGM 추천이 글과 잘 맞았어요',
@@ -141,7 +165,7 @@ export default function Feedback({ onDone }) {
 
         <button
           className="feedback-submit-btn"
-          onClick={() => setSubmitted(true)}
+          onClick={handleSubmit}
           disabled={rating === 0}
           style={{ opacity: rating === 0 ? 0.5 : 1 }}
         >
