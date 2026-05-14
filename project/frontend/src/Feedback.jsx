@@ -15,8 +15,6 @@ export default function Feedback({ onDone }) {
   const [recommend, setRecommend] = useState(null)
   const [submitted, setSubmitted] = useState(false)
 
-  const [submitted, setSubmitted] = useState(false)
-
   const handleSubmit = async () => {        
     if (rating === 0) return
     try {
