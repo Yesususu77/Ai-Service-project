@@ -110,6 +110,53 @@ body { font-family: var(--font-ui); font-size: 14px; height: 100vh; overflow: hi
 /* ===== 하단 바 ===== */
 .statusbar { height: 28px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 
+/* 사이드바 하단 버튼 */
+.sidebar-bottom {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-bottom-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar-sm-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar-sm-btn:hover {
+  background: var(--hover);
+}
+
+.sidebar-theme-btn {
+  width: 100%;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent, #c0392b);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sidebar-theme-btn:hover {
+  opacity: 0.85;
+}
+
 /* ===== 좌측 오디오 패널 ===== */
 .audio-panel { width: var(--audio-w); min-width: var(--audio-w); background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; transition: background 0.3s; }
 .audio-section { padding: 14px 12px; border-bottom: 1px solid var(--border); }
