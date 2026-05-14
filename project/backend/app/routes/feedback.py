@@ -6,6 +6,7 @@ from app.database import SessionLocal
 router = APIRouter()
 
 class FeedbackCreate(BaseModel):
+    username: str = ''
     rating: int
     age: str = ''
     purpose: str = ''
