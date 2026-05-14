@@ -63,12 +63,17 @@ export default function GenreSelect({ onStart }) {
         </div>
       </div>
 
+      <div className="genre-btn-row">
       <button className="genre-start-btn" onClick={() => {
         const genre = GENRES.find(g => g.id === selected)
         onStart(genre ? genre.name : '')
       }}>
         집필 시작하기 →
       </button>
+      <button className="genre-skip-btn" onClick={() => onStart('')}>
+        선택 안하고 바로 시작할래요
+      </button>
+      </div>
     </div>
   )
 }
