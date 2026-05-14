@@ -6,6 +6,7 @@ from app.routes.user import router as user_router
 from app.routes.analyze import router as analyze_router 
 from app.routes.music import router as music_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes.feedback import router as feedback_router
 
 app = FastAPI()
 @app.get("/")
@@ -28,6 +29,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(user_router, prefix="/api/user")
 app.include_router(analyze_router, prefix="/api/analyze")
 app.include_router(music_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api")
 
 # 환경변수 (AI 분석 서버 주소)
 AI_URL = os.getenv("AI_URL", "http://ai:8001/predict")
