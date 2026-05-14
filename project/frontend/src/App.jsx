@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import './App.css'
 import Login from './Login'
 import GenreSelect from './GenreSelect'
+import MyWritings from './MyWritings'
+import Feedback from './Feedback'
 
 const FONTS = [
   { name: '나눔명조', label: '나눔명조', family: "'Nanum Myeongjo', serif" },
@@ -24,7 +26,7 @@ export default function App() {
   const savedData = JSON.parse(localStorage.getItem('muse_save') || 'null')
   
   const [page, setPage] = useState('login')
-  const [selectedGenre, setSelectedGenre] = useState(null)
+  const [selectedGenre, setSelectedGenre] = useState(savedData?.selectedGenre || null)
   const [isDark, setIsDark] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentFont, setCurrentFont] = useState(FONTS[0])
@@ -209,6 +211,7 @@ export default function App() {
       storyTitle,
       chapters,
       chapterParagraphs,
+      selectedGenre,
       savedAt: new Date().toLocaleString('ko-KR')
     }
     localStorage.setItem('muse_save', JSON.stringify(saveData))
@@ -222,8 +225,20 @@ export default function App() {
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
 
-  if (page === 'login') return <Login onLogin={() => setPage('genre')} />
-  if (page === 'genre') return <GenreSelect onStart={(genre) => { setSelectedGenre(genre); setPage('editor') }} />
+  if (page === 'login') return <Login onLogin={() => setPage('writings')} />
+  if (page === 'writings') return (
+    <MyWritings
+      onContinue={() => setPage('editor')}
+      onNewWrite={() => setPage('genre')}
+    />
+  )
+  if (page === 'genre') return (
+    <GenreSelect onStart={(genre) => {
+      setSelectedGenre(genre)
+      setPage('editor')
+    }} />
+  )
+  if (page === 'feedback') return <Feedback onDone={() => setPage('editor')} />
 
   return (
     <div className={`app ${isDark ? 'dark' : 'light'}`}>
@@ -460,6 +475,16 @@ export default function App() {
                 )}
             </div>
           </div>
+            </div>
+          <div className="sidebar-bottom">
+                <div className="sidebar-bottom-row">
+                  <button className="sidebar-sm-btn" onClick={handleSave}>저장</button>
+                  <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>글 목록</button>
+                </div>
+                <button className="sidebar-theme-btn" onClick={() => setPage('feedback')}>
+                  테마곡 생성 / 피드백
+                </button>
+              </div>
             </div>
           </aside>
         )}
