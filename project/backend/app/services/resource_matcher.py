@@ -118,10 +118,31 @@ async def fetch_bgm_track(mood: list[str], energy: int) -> dict | None:
 # ──────────────────────────────────────────────
 # SFX 리스트 반환 로직
 # ──────────────────────────────────────────────
-def get_sfx_urls(sfx_list: list[str]) -> list[dict]:
+async def get_sfx_urls(sfx_list: list[str]) -> list[dict]:
+    """
+    SFX 키워드 목록을 Supabase sfx_tracks 테이블에서 조회하여 URL로 변환한다.
+    """
+    if not SUPABASE_URL or not SUPABASE_KEY or not sfx_list:
+        return []
+
     result = []
-    for keyword in sfx_list:
-        url = SFX_FILE_MAP.get(keyword)
-        if url:
-            result.append({"keyword": keyword, "url": url})
+    async with httpx.AsyncClient(timeout=5) as client:
+        for keyword in sfx_list:
+            encoded_keyword = quote(keyword)
+            url = (
+                f"{SUPABASE_URL}/rest/v1/sfx_tracks"
+                f"?keyword=eq.{encoded_keyword}&limit=1&select=title,url,keyword"
+            )
+            try:
+                response = await client.get(url, headers=_SUPABASE_HEADERS)
+                response.raise_for_status()
+                data = response.json()
+                if data:
+                    result.append({
+                        "keyword": keyword,
+                        "url": data[0]["url"]
+                    })
+            except (httpx.HTTPStatusError, httpx.RequestError):
+                continue
+
     return result
