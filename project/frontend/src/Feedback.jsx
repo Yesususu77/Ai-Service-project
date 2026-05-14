@@ -4,7 +4,7 @@ import './Feedback.css'
 const PURPOSES = ['작가', '취미', '학생', '직장인', '기타']
 const AGE_GROUPS = ['10대', '20대', '30대', '40대', '50대 이상']
 
-export default function Feedback({ onDone }) {
+export default function Feedback({ onDone, username }) {
   const BE_URL = 'https://backend-service-egef.onrender.com'
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
@@ -22,6 +22,7 @@ export default function Feedback({ onDone }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username,
           rating,
           age,
           purpose,
