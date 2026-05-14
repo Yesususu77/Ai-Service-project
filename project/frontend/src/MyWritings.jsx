@@ -5,18 +5,21 @@ export default function MyWritings({ onContinue, onNewWrite }) {
   const [writings, setWritings] = useState([])
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('muse_save') || 'null')
-    if (saved) {
-      setWritings([{
-        id: 1,
-        title: saved.storyTitle || '제목 없음',
-        chapter: `${saved.chapters?.length || 1}장까지`,
-        date: saved.savedAt || '',
-        genre: saved.selectedGenre || '장르 미선택'
-      }])
-    }
-  }, [])
-
+  const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+  setWritings(list.map(w => ({
+    id: w.id,
+    title: w.storyTitle || '제목 없음',
+    chapter: `${w.chapters?.length || 1}장까지`,
+    date: w.savedAt || '',
+    genre: w.selectedGenre || '장르 미선택',
+    // 이어쓰기 버튼에서 전체 데이터 필요
+    storyTitle: w.storyTitle,
+    chapters: w.chapters,
+    chapterParagraphs: w.chapterParagraphs,
+    selectedGenre: w.selectedGenre,
+  })))
+}, [])
+  
   return (
     <div className="writings-page">
       <div className="writings-header">
