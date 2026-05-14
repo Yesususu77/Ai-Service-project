@@ -23,7 +23,19 @@ const MOOD_COLORS = {
 const BE_URL = 'https://backend-service-egef.onrender.com'
 
 export default function App() {
-  const savedData = JSON.parse(localStorage.getItem('muse_save') || 'null')
+  const savedData = (() => {
+  const currentId = localStorage.getItem('muse_current')
+  if (!currentId) return null
+  const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+  return list.find(w => w.id === currentId) || null
+  })()
+
+  const [currentWritingId, setCurrentWritingId] = useState(savedData?.id || null)
+  const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
+  const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
+  const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
+  const [activeChapter, setActiveChapter] = useState(1)
+  const [editingTitle, setEditingTitle] = useState(false)
   
   const [page, setPage] = useState('login')
   const [selectedGenre, setSelectedGenre] = useState(savedData?.selectedGenre || null)
@@ -207,14 +219,22 @@ export default function App() {
   // 저장 버튼
   const handleSave = () => {
   try {
+    const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+    const id = currentWritingId || Date.now().toString()
     const saveData = {
+      id,
       storyTitle,
       chapters,
       chapterParagraphs,
       selectedGenre,
       savedAt: new Date().toLocaleString('ko-KR')
     }
-    localStorage.setItem('muse_save', JSON.stringify(saveData))
+    const idx = list.findIndex(w => w.id === id)
+    if (idx >= 0) list[idx] = saveData
+    else list.push(saveData)
+    localStorage.setItem('muse_writings', JSON.stringify(list))
+    localStorage.setItem('muse_current', id)
+    setCurrentWritingId(id)
     setSaveStatus('저장됨 ✓')
     setTimeout(() => setSaveStatus(''), 2000)
   } catch {
@@ -227,11 +247,29 @@ export default function App() {
 
   if (page === 'login') return <Login onLogin={() => setPage('writings')} />
   if (page === 'writings') return (
-    <MyWritings
-      onContinue={() => setPage('editor')}
-      onNewWrite={() => setPage('genre')}
-    />
-  )
+  <MyWritings
+    onContinue={(w) => {
+      setCurrentWritingId(w.id)
+      setStoryTitle(w.storyTitle || '')
+      setChapters(w.chapters || [{ id: 1, title: '1장' }])
+      setChapterParagraphs(w.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
+      setSelectedGenre(w.selectedGenre || null)
+      setActiveChapter(1)
+      localStorage.setItem('muse_current', w.id)
+      setPage('editor')
+    }}
+    onNewWrite={() => {
+      setCurrentWritingId(null)
+      setStoryTitle('')
+      setChapters([{ id: 1, title: '1장' }])
+      setChapterParagraphs({ 1: [{ id: 1, text: '' }] })
+      setSelectedGenre(null)
+      setActiveChapter(1)
+      localStorage.removeItem('muse_current')
+      setPage('genre')
+    }}
+  />
+)
   if (page === 'genre') return (
     <GenreSelect onStart={(genre) => {
       setSelectedGenre(genre)
