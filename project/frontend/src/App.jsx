@@ -30,6 +30,7 @@ export default function App() {
   return list.find(w => w.id === currentId) || null
   })()
 
+  const [username, setUsername] = useState('')
   const [page, setPage] = useState('login')
   const [selectedGenre, setSelectedGenre] = useState(savedData?.selectedGenre || null)
   const [isDark, setIsDark] = useState(false)
@@ -239,7 +240,12 @@ export default function App() {
   const now = new Date()
   const timeStr = `오늘 오후 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
 
-  if (page === 'login') return <Login onLogin={() => setPage('writings')} />
+  if (page === 'login') return (
+    <Login onLogin={(id) => {
+      setUsername(id)
+      setPage('writings')
+    }} />
+  )
   if (page === 'writings') return (
   <MyWritings
     onContinue={(w) => {
@@ -284,7 +290,7 @@ export default function App() {
       setPage('editor')
     }} />
   )
-  if (page === 'feedback') return <Feedback onDone={() => setPage('editor')} />
+  if (page === 'feedback') return <Feedback username={username} onDone={() => setPage('editor')} />
 
   return (
     <div className={`app ${isDark ? 'dark' : 'light'}`}>
