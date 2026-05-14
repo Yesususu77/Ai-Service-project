@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './Feedback.css'
 
 const PURPOSES = ['작가', '취미', '학생', '직장인', '기타']
@@ -35,7 +35,24 @@ export default function Feedback({ onDone, username }) {
       console.error('피드백 저장 실패', e)
     }
     setSubmitted(true)
-  }                                          
+  }   
+
+  useEffect(() => {
+    if (!username) return
+    fetch(`${BE_URL}/api/feedback/${username}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data) {
+          setRating(data.rating || 0)
+          setAge(data.age || '')
+          setPurpose(data.purpose || '')
+          setSatisfactions(data.satisfactions ? data.satisfactions.split(', ') : [])
+          setImprovements(data.improvements || '')
+          setRecommend(data.recommend || '')
+        }
+      })
+      .catch(() => {})
+  }, [username])
 
   const SATISFACTION_OPTIONS = [
     'BGM 추천이 글과 잘 맞았어요',
