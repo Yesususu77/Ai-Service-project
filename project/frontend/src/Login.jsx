@@ -40,7 +40,7 @@ export default function Login({ onLogin }) {
         }
         return
       }
-      onLogin()
+      onLogin(id)
     } catch {
       setErrorMsg('서버 연결 오류가 발생했어요.')
     }
