@@ -23,13 +23,14 @@ app.add_middleware(
 # 추가 시작
 connected_clients = []
 
-async def log_to_clients(message: str):
-    """연결된 모든 모니터링 페이지로 로그 전송"""
-    for client_ws in connected_clients:
-        try:
-            await client_ws.send_text(message)
-        except:
-            continue
+# 삭제
+#async def log_to_clients(message: str):
+#    """연결된 모든 모니터링 페이지로 로그 전송"""
+#    for client_ws in connected_clients:
+#        try:
+#            await client_ws.send_text(message)
+#        except:
+#            continue
 # 여기까지 추가
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -58,7 +59,7 @@ def predict(req: AnalyzeRequest):
         valid_moods = [m for m in raw.get("mood", []) if m in config.VALID_MOODS]
         energy = max(1, min(5, raw.get("energy", 3)))
         sfx = raw.get("sfx", [])[:config.MAX_SFX_COUNT]
-        await log_to_clients(f" 분석 완료: {valid_moods}") # 추가
+        #await log_to_clients(f" 분석 완료: {valid_moods}") # 삭제
         return {
             "mood":   valid_moods or config.DEFAULT_MOOD,
             "energy": energy,
