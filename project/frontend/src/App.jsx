@@ -30,13 +30,6 @@ export default function App() {
   return list.find(w => w.id === currentId) || null
   })()
 
-  const [currentWritingId, setCurrentWritingId] = useState(savedData?.id || null)
-  const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
-  const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
-  const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
-  const [activeChapter, setActiveChapter] = useState(1)
-  const [editingTitle, setEditingTitle] = useState(false)
-  
   const [page, setPage] = useState('login')
   const [selectedGenre, setSelectedGenre] = useState(savedData?.selectedGenre || null)
   const [isDark, setIsDark] = useState(false)
@@ -44,6 +37,7 @@ export default function App() {
   const [currentFont, setCurrentFont] = useState(FONTS[0])
   const [showFontMenu, setShowFontMenu] = useState(false)
 
+  const [currentWritingId, setCurrentWritingId] = useState(savedData?.id || null)
   const [storyTitle, setStoryTitle] = useState(savedData?.storyTitle || '')
   const [chapters, setChapters] = useState(savedData?.chapters || [{ id: 1, title: '1장' }])
   const [chapterParagraphs, setChapterParagraphs] = useState(savedData?.chapterParagraphs || { 1: [{ id: 1, text: '' }] })
