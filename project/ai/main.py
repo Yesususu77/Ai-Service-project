@@ -43,7 +43,7 @@ class AnalyzeRequest(BaseModel):
 @app.post("/predict")
 def predict(req: AnalyzeRequest):
     try:
-        await log_to_clients(f"요청 수신: {req.text[:30]}...") # 추가
+        # await log_to_clients(f"요청 수신: {req.text[:30]}...") # 삭제
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             response_format={"type": "json_object"},
