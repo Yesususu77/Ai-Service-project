@@ -445,7 +445,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 우측 사이드바 */}
+{/* 우측 사이드바 */}
         {!isFullscreen && (
           <aside className="sidebar-panel">
             <div className="sidebar-topbar">
@@ -460,31 +460,30 @@ export default function App() {
               {checkResults.map((item, i) => (
                 <CheckCard key={i} item={item} onApply={handleApply} />
               ))}
-            <div className="check-section">
-              <div className="sidebar-sub-title">음악 장르</div>
-              <div className="genre-grid">
-                {selectedGenre ? (
-                  <div className="genre-row">
-                    <span className="genre-key">선택 장르</span>
-                    <span className="genre-val">{selectedGenre}</span>
-                  </div>
-                ) : (
-                  <div className="genre-row">
-                    <span className="genre-key">장르 미선택</span>
-                  </div>
-                )}
-            </div>
-          </div>
-            </div>
-          <div className="sidebar-bottom">
-                <div className="sidebar-bottom-row">
-                  <button className="sidebar-sm-btn" onClick={handleSave}>저장</button>
-                  <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>글 목록</button>
+              <div className="check-section">
+                <div className="sidebar-sub-title">음악 장르</div>
+                <div className="genre-grid">
+                  {selectedGenre ? (
+                    <div className="genre-row">
+                      <span className="genre-key">선택 장르</span>
+                      <span className="genre-val">{selectedGenre}</span>
+                    </div>
+                  ) : (
+                    <div className="genre-row">
+                      <span className="genre-key">장르 미선택</span>
+                    </div>
+                  )}
                 </div>
-                <button className="sidebar-theme-btn" onClick={() => setPage('feedback')}>
-                  테마곡 생성 / 피드백
-                </button>
               </div>
+            </div>
+            <div className="sidebar-bottom">
+              <div className="sidebar-bottom-row">
+                <button className="sidebar-sm-btn" onClick={handleSave}>저장</button>
+                <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>글 목록</button>
+              </div>
+              <button className="sidebar-theme-btn" onClick={() => setPage('feedback')}>
+                테마곡 생성 / 피드백
+              </button>
             </div>
           </aside>
         )}
