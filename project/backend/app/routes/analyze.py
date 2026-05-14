@@ -65,7 +65,7 @@ async def analyze(req: AnalyzeRequest):
             bgm = await resource_matcher.fetch_bgm_track(
                 fallback["mood"], fallback["energy"]
             )
-            sfx_urls = resource_matcher.get_sfx_urls(fallback["sfx"])
+            sfx_urls = await resource_matcher.get_sfx_urls(fallback["sfx"])
             return AnalyzeResponse(
                 **fallback,
                 bgm=bgm,
@@ -82,7 +82,7 @@ async def analyze(req: AnalyzeRequest):
 
     # g) BGM 및 SFX URL 조회
     bgm = await resource_matcher.fetch_bgm_track(result["mood"], result["energy"])
-    sfx_urls = resource_matcher.get_sfx_urls(result["sfx"])
+    sfx_urls = await resource_matcher.get_sfx_urls(result["sfx"])
 
     # h) 결과 저장
     session_manager.save_valid_result(user_id, result)
