@@ -1,6 +1,7 @@
 import os
 import time
 import httpx
+import asyncio
 from collections import defaultdict
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -118,7 +119,23 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_clients.add(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
+            except asyncio.TimeoutError:
+                await websocket.send_text("🟢 ping")  # 연결 유지용
+    except WebSocketDisconnect:
+        connected_clients.discard(websocket)
+    except Exception:
+        connected_clients.discard(websocket)@app.websocket("/ws/logs")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connected_clients.add(websocket)
+    try:
+        while True:
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
+            except asyncio.TimeoutError:
+                await websocket.send_text("🟢 ping")  # 연결 유지용
     except WebSocketDisconnect:
         connected_clients.discard(websocket)
     except Exception:
