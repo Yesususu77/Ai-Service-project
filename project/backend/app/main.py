@@ -86,25 +86,27 @@ AI_URL = os.getenv("AI_URL", "http://ai:8001/predict")
 
 @app.get("/api")
 async def call_ai():
+    start_time = time.time() # ✅ 시작 시간 기록
     async with httpx.AsyncClient() as client:
         try:
-            await log_to_clients("📡 AI 서버 호출 중...")
+            await log_to_clients("📡 AI 서버 호출 시작")
             response = await client.get(AI_URL, timeout=10.0)
+            
+            # ✅ 소요 시간 계산
+            duration = round(time.time() - start_time, 2)
+            
             response.raise_for_status()
-            await log_to_clients("✅ AI 응답 수신 완료")
+            
+            await log_to_clients(f"✅ AI 응답 완료 ({duration}s)") # ✅ 소요 시간 포함
             return response.json()
-        except httpx.ConnectError:
-            await log_to_clients("❌ AI 서버 연결 실패")
-            raise HTTPException(status_code=503, detail="AI 서버에 연결할 수 없습니다.")
-        except httpx.TimeoutException:
-            await log_to_clients("⏱️ AI 서버 타임아웃")
-            raise HTTPException(status_code=504, detail="AI 분석 시간이 초과되었습니다.")
+            
         except httpx.HTTPStatusError as e:
-            await log_to_clients(f"⚠️ AI 서버 오류: {e.response.status_code}")
-            raise HTTPException(status_code=e.response.status_code, detail=f"AI 서버 응답 오류: {e.response.text}")
+            # ✅ 400 에러 발생 시에도 로그 창에 이유를 출력
+            await log_to_clients(f"⚠️ AI 서버 오류: {e.response.status_code} | 데이터 형식 확인 필요")
+            raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
         except Exception as e:
-            await log_to_clients(f"❌ 예외 발생: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"예상치 못한 오류: {str(e)}")
+            await log_to_clients(f"❌ 오류 발생: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stats")
 async def stats():
