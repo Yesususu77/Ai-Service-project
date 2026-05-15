@@ -113,32 +113,29 @@ async def stats():
         "rate_limit_status": {ip: len(times) for ip, times in request_counts.items()}
     }
 
+
+
 @app.websocket("/ws/logs")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connected_clients.add(websocket)
     try:
         while True:
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
-            except asyncio.TimeoutError:
-                await websocket.send_text("🟢 ping")  # 연결 유지용
+            # 1. 프론트엔드(index.html)에서 보낸 데이터를 받음
+            data = await websocket.receive_text()
+            
+            # 2. "ping"이 아니면 모든 연결된 클라이언트(모니터링 창)에 전송
+            if data != "ping":
+                # 만약 JSON 형태면 파싱해서 예쁘게 보낼 수도 있음
+                await log_to_clients(f"{data}")
+            else:
+                # 연결 유지용 응답
+                await websocket.send_text("🟢 pong")
+                
     except WebSocketDisconnect:
         connected_clients.discard(websocket)
-    except Exception:
-        connected_clients.discard(websocket)@app.websocket("/ws/logs")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connected_clients.add(websocket)
-    try:
-        while True:
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
-            except asyncio.TimeoutError:
-                await websocket.send_text("🟢 ping")  # 연결 유지용
-    except WebSocketDisconnect:
-        connected_clients.discard(websocket)
-    except Exception:
+    except Exception as e:
+        print(f"WS Error: {e}")
         connected_clients.discard(websocket)
 
 @app.get("/logs")
