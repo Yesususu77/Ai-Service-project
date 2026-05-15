@@ -3,9 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/vite.svg" />
-    <title>뮤즈 에디터</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>muse</title>
+    <title>뮤즈 에디터 - 모니터링 모드</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:wght@300;400;700&family=Nanum+Gothic&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;500&family=Noto+Serif+KR:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -13,5 +12,44 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+      (function() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/logs`;
+        let socket;
+
+        function connect() {
+          socket = new WebSocket(wsUrl);
+          socket.onopen = () => console.log("Log Tracker Connected");
+          socket.onclose = () => setTimeout(connect, 3000);
+        }
+        connect();
+
+        // 1. 클릭 로그 추적
+        document.addEventListener('click', (e) => {
+          const target = e.target;
+          if (target.tagName === 'BUTTON' || target.closest('button')) {
+            const btnText = target.innerText || target.ariaLabel || "button";
+            if (socket?.readyState === 1) {
+              socket.send(`🖱️ [클릭] ${btnText} 버튼을 눌렀습니다.`);
+            }
+          }
+        });
+
+        // 2. 글자 작성 추적 (에디터 전용)
+        let lastInputTime = Date.now();
+        document.addEventListener('input', (e) => {
+          const now = Date.now();
+          if (now - lastInputTime > 2000) { // 2초 간격으로 로깅
+            const length = e.target.value?.length || e.target.innerText?.length || 0;
+            if (socket?.readyState === 1) {
+              socket.send(`✍️ [작성] 현재 약 ${length}자 작성 중...`);
+            }
+            lastInputTime = now;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
