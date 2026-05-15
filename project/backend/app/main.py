@@ -1,7 +1,9 @@
 import os
+import time
 import httpx
+from collections import defaultdict 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from app.database import engine, Base
 from app.routes.user import router as user_router
 from app.routes.analyze import router as analyze_router 
@@ -19,8 +21,34 @@ async def log_to_clients(message: str):
         try:
             await client_ws.send_text(message)
         except Exception:
-            connected_clients.remove(client_ws)
+            connected_clients.discard(ws)
 
+active_users = set()
+
+request_counts = defaultdict(list)
+RATE_LIMIT = 20
+RATE_WINDOW = 60
+
+@app.middleware("http")
+async def tracking_middleware(request: Request, call_next):
+    client_ip = request.client.host
+    user_agent = request.headers.get("user-agent", "unknown")       # ✅ NEW: 장비정보
+    referrer = request.headers.get("referer", "direct")             # ✅ NEW: 유입경로
+    path = request.url.path
+
+    now = time.time()
+    request_counts[client_ip] = [t for t in request_counts[client_ip] if now - t < RATE_WINDOW]
+    if len(request_counts[client_ip]) >= RATE_LIMIT:                # ✅ NEW: Rate Limit 차단
+        await log_to_clients(f"🚫 Rate limit 초과: {client_ip}")
+        return JSONResponse(status_code=429, content={"detail": "Too Many Requests"})
+    request_counts[client_ip].append(now)
+
+    active_users.add(client_ip)                                      # ✅ NEW: CCU 카운트
+    await log_to_clients(f"👥 CCU: {len(active_users)} | IP: {client_ip} | {path} | Referrer: {referrer} | UA: {user_agent[:80]}")
+
+    response = await call_next(request)
+    return response
+    
 @app.get("/")
 def root():
     return {"message": "server running"}
@@ -64,6 +92,13 @@ async def call_ai():
             await log_to_clients(f"❌ 예외 발생: {str(e)}")
             raise HTTPException(status_code=500, detail=f"예상치 못한 오류 발생: {str(e)}")
 
+@app.get("/stats")
+async def stats():
+    return {
+        "ccu": len(active_users),
+        "rate_limit_status": {ip: len(times) for ip, times in request_counts.items()}
+    }
+    
 @app.websocket("/ws/logs")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
