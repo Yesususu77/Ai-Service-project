@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import time
 
 from app.schemas import (
     AnalyzeRequest,
@@ -17,6 +18,13 @@ router = APIRouter()
 # POST /analyze
 # ──────────────────────────────────────────────
 
+async def _log(msg: str):
+    try:
+        from app.main import log_to_clients
+        await log_to_clients(msg)
+    except Exception:
+        pass
+        
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest):
     """
@@ -37,6 +45,7 @@ async def analyze(req: AnalyzeRequest):
     user_id = req.user_id
     prev_text = req.prev_text
 
+    await _log(f"📥 분석 요청 | user: {user_id} | style: {style} | text: {text[:30]}...")  # ✅ NEW: 생성 파라미터 로깅
     # a) 트리거 조건 확인
     if not trigger.is_sentence_end(text) and not trigger.should_debounce(text, prev_text):
         raise HTTPException(
@@ -47,8 +56,12 @@ async def analyze(req: AnalyzeRequest):
     # b) 새 request_id 생성
     request_id = session_manager.set_request_id(user_id)
 
+    start_time = time.time()  
+
     # c) OpenAI API 호출
     raw = await openai_service.call_openai_with_retry(text, style)
+    latency = round(time.time() - start_time, 2)  
+    await _log(f"⏱️ OpenAI 소요시간: {latency}s | user: {user_id}") 
   
 
     # d) 최신 요청 여부 확인
@@ -60,6 +73,7 @@ async def analyze(req: AnalyzeRequest):
 
     # e) OpenAI 실패 시 폴백 처리
     if raw is None:
+        await _log(f"❌ OpenAI 실패, 폴백 시도 | user: {user_id}")
         fallback = session_manager.get_fallback_result(user_id)
         if fallback:
             bgm = await resource_matcher.fetch_bgm_track(
@@ -79,6 +93,7 @@ async def analyze(req: AnalyzeRequest):
 
     # f) 결과 검증 및 정제
     result = validator.validate_result(raw, style)
+    await _log(f"✅ 분석 성공 | mood: {result['mood']} | energy: {result['energy']} | sfx: {result['sfx']}")
 
     # g) BGM 및 SFX URL 조회
     bgm = await resource_matcher.fetch_bgm_track(result["mood"], result["energy"])
