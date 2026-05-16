@@ -203,10 +203,18 @@ export default function App() {
   // 자동저장(local)
   useEffect(() => {
   const interval = setInterval(() => {
-    console.log('자동저장 실행됨', new Date().toLocaleString())  // ← 추가
-    if (!storyTitle && !Object.values(chapterParagraphs).flat().some(p => p.text)) return
+    console.log('자동저장 실행됨', new Date().toLocaleString())
+    
+    const hasContent = Object.values(chapterParagraphs).flat().some(p => p.text)
+    console.log('storyTitle:', storyTitle, 'hasContent:', hasContent)
+    
+    if (!storyTitle && !hasContent) {
+      console.log('내용 없어서 중단')
+      return
+    }
     
     const id = currentWritingId || Date.now().toString()
+    console.log('저장 id:', id)
     
     if (!currentWritingId) {
       setCurrentWritingId(id)
@@ -227,6 +235,7 @@ export default function App() {
     if (idx >= 0) list[idx] = saveData
     else list.push(saveData)
     localStorage.setItem('muse_writings', JSON.stringify(list))
+    console.log('localStorage 저장 완료', saveData.savedAt)
 
     setSaveStatus('자동저장됨')
     setTimeout(() => setSaveStatus(''), 2000)
