@@ -5,50 +5,69 @@ export default function MyWritings({ onContinue, onNewWrite, username, BE_URL })
   const [writings, setWritings] = useState([])
 
   useEffect(() => {
-    // 1. localStorage 먼저 표시
-    const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
-    setWritings(list.map(w => ({
-      id: w.id,
-      title: w.storyTitle || '제목 없음',
-      chapter: `${w.chapters?.length || 1}장까지`,
-      date: w.savedAt || '',
-      genre: w.selectedGenre || '장르 미선택',
-      storyTitle: w.storyTitle,
-      chapters: w.chapters,
-      chapterParagraphs: w.chapterParagraphs,
-      selectedGenre: w.selectedGenre,
-    })))
+  // 1. localStorage 먼저 표시
+  const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+  setWritings(list.map(w => ({
+    id: w.id,
+    title: w.storyTitle || '제목 없음',
+    chapter: `${w.chapters?.length || 1}장까지`,
+    date: w.savedAt || '',
+    genre: w.selectedGenre || '장르 미선택',
+    storyTitle: w.storyTitle,
+    chapters: w.chapters,
+    chapterParagraphs: w.chapterParagraphs,
+    selectedGenre: w.selectedGenre,
+  })))
 
-    // 2. DB에서 최신 데이터 불러오기
-    if (!username) return
-    fetch(`${BE_URL}/api/writings/${username}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          const dbWritings = data.map(w => ({
-            id: w.id,
-            title: w.story_title || '제목 없음',
-            chapter: `${w.chapters?.length || 1}장까지`,
-            date: w.saved_at || '',
-            genre: w.selected_genre || '장르 미선택',
-            storyTitle: w.story_title,
-            chapters: w.chapters,
-            chapterParagraphs: w.chapter_paragraphs,
-            selectedGenre: w.selected_genre,
-          }))
-          setWritings(dbWritings)
-          localStorage.setItem('muse_writings', JSON.stringify(data.map(w => ({
-            id: w.id,
-            storyTitle: w.story_title,
-            chapters: w.chapters,
-            chapterParagraphs: w.chapter_paragraphs,
-            selectedGenre: w.selected_genre,
-            savedAt: w.saved_at
-          }))))
-        }
-      })
-      .catch(() => {})
-  }, [username])
+  // 2. DB에서 불러오기 (localStorage보다 오래된 경우 무시)
+  if (!username) return
+  fetch(`${BE_URL}/api/writings/${username}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.length > 0) {
+        const localList = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+        
+        const merged = data.map(dbItem => {
+          const localItem = localList.find(l => l.id === dbItem.id)
+          
+          // 로컬이 더 최신이면 로컬 사용
+          if (localItem && localItem.savedAt) {
+            const localTime = new Date(localItem.savedAt).getTime()
+            const dbTime = new Date(dbItem.saved_at).getTime()
+            if (localTime > dbTime) return localItem
+          }
+
+          // DB가 더 최신이면 DB 사용
+          return {
+            id: dbItem.id,
+            storyTitle: dbItem.story_title,
+            chapters: dbItem.chapters,
+            chapterParagraphs: dbItem.chapter_paragraphs,
+            selectedGenre: dbItem.selected_genre,
+            savedAt: dbItem.saved_at
+          }
+        })
+
+        // localStorage에 없는 DB 항목 추가
+        localList.forEach(l => {
+          if (!merged.find(m => m.id === l.id)) merged.push(l)
+        })
+
+        setWritings(merged.map(w => ({
+          id: w.id,
+          title: w.storyTitle || '제목 없음',
+          chapter: `${w.chapters?.length || 1}장까지`,
+          date: w.savedAt || '',
+          genre: w.selectedGenre || '장르 미선택',
+          storyTitle: w.storyTitle,
+          chapters: w.chapters,
+          chapterParagraphs: w.chapterParagraphs,
+          selectedGenre: w.selectedGenre,
+        })))
+      }
+    })
+    .catch(() => {})
+}, [username])
 
   return (
     <div className="writings-page">
