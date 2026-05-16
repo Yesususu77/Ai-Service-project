@@ -204,7 +204,14 @@ export default function App() {
   useEffect(() => {
   const interval = setInterval(() => {
     if (!storyTitle && !Object.values(chapterParagraphs).flat().some(p => p.text)) return
+    
     const id = currentWritingId || Date.now().toString()
+    
+    if (!currentWritingId) {
+      setCurrentWritingId(id)
+      localStorage.setItem('muse_current', id)
+    }
+
     const saveData = {
       id,
       storyTitle,
@@ -213,11 +220,13 @@ export default function App() {
       selectedGenre,
       savedAt: new Date().toLocaleString('ko-KR')
     }
+
     const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
     const idx = list.findIndex(w => w.id === id)
     if (idx >= 0) list[idx] = saveData
     else list.push(saveData)
     localStorage.setItem('muse_writings', JSON.stringify(list))
+
     setSaveStatus('자동저장됨')
     setTimeout(() => setSaveStatus(''), 2000)
   }, 60000)
