@@ -200,6 +200,30 @@ export default function App() {
   }
 }
 
+  // 자동저장(local)
+  useEffect(() => {
+  const interval = setInterval(() => {
+    if (!storyTitle && !Object.values(chapterParagraphs).flat().some(p => p.text)) return
+    const id = currentWritingId || Date.now().toString()
+    const saveData = {
+      id,
+      storyTitle,
+      chapters,
+      chapterParagraphs,
+      selectedGenre,
+      savedAt: new Date().toLocaleString('ko-KR')
+    }
+    const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
+    const idx = list.findIndex(w => w.id === id)
+    if (idx >= 0) list[idx] = saveData
+    else list.push(saveData)
+    localStorage.setItem('muse_writings', JSON.stringify(list))
+    setSaveStatus('자동저장됨')
+    setTimeout(() => setSaveStatus(''), 2000)
+  }, 60000)
+  return () => clearInterval(interval)
+}, [storyTitle, chapters, chapterParagraphs, selectedGenre, currentWritingId])
+  
   // 적용 버튼: 본문에서 original → fix로 교체
   const handleApply = (word, suggestion) => {
     setChapterParagraphs(prev => ({
@@ -212,10 +236,10 @@ export default function App() {
   }
 
   // 저장 버튼
-  const handleSave = () => {
+  const handleSave = async () => {
   try {
-    const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
     const id = currentWritingId || Date.now().toString()
+
     const saveData = {
       id,
       storyTitle,
@@ -224,12 +248,30 @@ export default function App() {
       selectedGenre,
       savedAt: new Date().toLocaleString('ko-KR')
     }
+
+    // 1. localStorage 저장
+    const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
     const idx = list.findIndex(w => w.id === id)
     if (idx >= 0) list[idx] = saveData
     else list.push(saveData)
     localStorage.setItem('muse_writings', JSON.stringify(list))
     localStorage.setItem('muse_current', id)
     setCurrentWritingId(id)
+
+    // 2. DB 저장
+    await fetch(`${BE_URL}/api/writings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        username,
+        story_title: storyTitle,
+        chapters,
+        chapter_paragraphs: chapterParagraphs,
+        selected_genre: selectedGenre || ''
+      })
+    })
+
     setSaveStatus('저장됨 ✓')
     setTimeout(() => setSaveStatus(''), 2000)
   } catch {
