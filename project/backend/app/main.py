@@ -30,7 +30,7 @@ request_counts = defaultdict(list)
 RATE_LIMIT = 200
 RATE_WINDOW = 60
 
-SKIP_PATHS = {"/logs", "/ws/logs", "/stats", "/", "/health"}  # ✅ NEW: 로그/헬스체크 경로 미들웨어 스킵
+SKIP_PATHS = {"/logs", "/ws/logs", "/stats", "/", "/health", "/api/log"}  # ✅ NEW: 로그/헬스체크 경로 미들웨어 스킵
 
 @app.middleware("http")
 async def tracking_middleware(request: Request, call_next):
@@ -116,6 +116,13 @@ async def stats():
     }
 
 
+@app.post("/api/log")
+async def receive_log(request: Request):
+    body = await request.json()
+    msg = body.get("msg", "")
+    await log_to_clients(msg)
+    return {"ok": True}
+    
 
 @app.websocket("/ws/logs")
 async def websocket_endpoint(websocket: WebSocket):
