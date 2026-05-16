@@ -530,7 +530,16 @@ export default function App() {
             </div>
             <div className="sidebar-bottom">
               <div className="sidebar-bottom-row">
-                <button className="sidebar-sm-btn" onClick={handleSave}>저장</button>
+                <button className="sidebar-sm-btn" onClick={() => {
+                  setCurrentWritingId(null)
+                  setStoryTitle('')
+                  setChapters([{ id: 1, title: '1장' }])
+                  setChapterParagraphs({ 1: [{ id: 1, text: '' }] })
+                  setSelectedGenre(null)
+                  setActiveChapter(1)
+                  localStorage.removeItem('muse_current')
+                  setPage('genre')
+                }}>새로쓰기</button>
                 <button className="sidebar-sm-btn" onClick={() => setPage('writings')}>글 목록</button>
               </div>
               <button className="sidebar-theme-btn" onClick={() => setPage('feedback')}>
