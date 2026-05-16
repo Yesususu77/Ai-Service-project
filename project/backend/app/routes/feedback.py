@@ -19,8 +19,16 @@ def save_feedback(data: FeedbackCreate):
     db = SessionLocal()
     try:
         db.execute(text("""
-            INSERT INTO feedback (rating, age, purpose, satisfactions, improvements, recommend)
-            VALUES (:rating, :age, :purpose, :satisfactions, :improvements, :recommend)
+            INSERT INTO feedback (username, rating, age, purpose, satisfactions, improvements, recommend)
+            VALUES (:username, :rating, :age, :purpose, :satisfactions, :improvements, :recommend)
+            ON CONFLICT (username) DO UPDATE SET
+                rating = EXCLUDED.rating,
+                age = EXCLUDED.age,
+                purpose = EXCLUDED.purpose,
+                satisfactions = EXCLUDED.satisfactions,
+                improvements = EXCLUDED.improvements,
+                recommend = EXCLUDED.recommend,
+                created_at = CURRENT_TIMESTAMP
         """), data.dict())
         db.commit()
         return {"success": True}
