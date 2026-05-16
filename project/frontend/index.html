@@ -14,9 +14,9 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
     (function() {
-        const WS_URL = `wss://backend-service-egef.onrender.com/ws/logs`;
+        const BACKEND = "https://backend-service-egef.onrender.com";
 
-        // ── 세션 ID (로컬스토리지로 재방문자 구분) ──
+        // ── 세션 ID ──
         let sessionId = localStorage.getItem('session_id');
         if (!sessionId) {
             sessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
@@ -31,26 +31,17 @@
         const os = ua.includes('iPhone') ? 'iOS' : ua.includes('Android') ? 'Android' : ua.includes('Mac') ? 'macOS' : ua.includes('Win') ? 'Windows' : '기타';
         const referrer = document.referrer || 'Direct';
 
-        // ── WebSocket ──
-        let socket;
+        // ── HTTP POST로 로그 전송 ──
         function send(msg) {
-            if (socket?.readyState === 1) socket.send(msg);
+            fetch(`${BACKEND}/api/log`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({msg})
+            }).catch(() => {});
         }
 
-        function connect() {
-            socket = new WebSocket(WS_URL);
-
-            socket.onopen = () => {
-                console.log("✅ 로그 서버 연결");
-                send(`🌐 [${sessionId}] 접속 | ${deviceType} | ${os}/${browser} | 유입: ${referrer}`);
-            };
-            socket.onclose = () => setTimeout(connect, 3000);
-            socket.onerror = () => socket.close();
-        }
-        connect();
-
-        // ── ping (연결 유지) ──
-        setInterval(() => send('ping'), 20000);
+        // ── 접속 로그 ──
+        send(`🌐 [${sessionId}] 접속 | ${deviceType} | ${os}/${browser} | 유입: ${referrer}`);
 
         // ── 1. 클릭 로그 ──
         document.addEventListener('click', (e) => {
@@ -67,7 +58,6 @@
             const now = Date.now();
             const length = e.target.value?.length ?? e.target.innerText?.length ?? 0;
             if (now - lastInputTime > 3000) {
-                // 전체 삭제 감지
                 if (prevLength > 50 && length === 0) {
                     send(`🔄 [${sessionId}] 텍스트 전체 삭제 (처음부터 다시 쓰는 중)`);
                 } else {
@@ -108,7 +98,7 @@
         }
         window.addEventListener('beforeunload', onLeave);
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) send(`👁️ [${sessionId}] 탭 비활성화 (다른 탭으로 이동)`);
+            if (document.hidden) send(`👁️ [${sessionId}] 탭 비활성화`);
             else send(`👁️ [${sessionId}] 탭 다시 활성화`);
         });
 
