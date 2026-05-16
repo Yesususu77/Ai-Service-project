@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import Login from './Login'
 import GenreSelect from './GenreSelect'
