@@ -227,7 +227,7 @@ export default function App() {
       chapters,
       chapterParagraphs,
       selectedGenre,
-      savedAt: new Date().toLocaleString('ko-KR')
+      savedAt: new Date().toISOString()
     }
 
     const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
@@ -265,7 +265,7 @@ export default function App() {
       chapters,
       chapterParagraphs,
       selectedGenre,
-      savedAt: new Date().toLocaleString('ko-KR')
+      savedAt: new Date().toISOString()
     }
 
     // 1. localStorage 저장
