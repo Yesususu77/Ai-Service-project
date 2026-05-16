@@ -290,6 +290,8 @@ export default function App() {
   )
   if (page === 'writings') return (
   <MyWritings
+    username={username}
+    BE_URL={BE_URL}
     onContinue={(w) => {
       setCurrentWritingId(w.id)
       setStoryTitle(w.storyTitle || '')
