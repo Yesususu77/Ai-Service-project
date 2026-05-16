@@ -28,25 +28,33 @@ export default function MyWritings({ onContinue, onNewWrite, username, BE_URL })
         const localList = JSON.parse(localStorage.getItem('muse_writings') || '[]')
         
         const merged = data.map(dbItem => {
-          const localItem = localList.find(l => l.id === dbItem.id)
-          
-          // 로컬이 더 최신이면 로컬 사용
-          if (localItem && localItem.savedAt) {
-            const localTime = new Date(localItem.savedAt).getTime()
-            const dbTime = new Date(dbItem.saved_at).getTime()
-            if (localTime > dbTime) return localItem
-          }
+  const localItem = localList.find(l => l.id === dbItem.id)
 
-          // DB가 더 최신이면 DB 사용
-          return {
-            id: dbItem.id,
-            storyTitle: dbItem.story_title,
-            chapters: dbItem.chapters,
-            chapterParagraphs: dbItem.chapter_paragraphs,
-            selectedGenre: dbItem.selected_genre,
-            savedAt: dbItem.saved_at
-          }
-        })
+  if (localItem && localItem.savedAt) {
+    // DB 시간을 Date로 변환
+    const dbTime = new Date(dbItem.saved_at).getTime()
+    // localStorage 시간을 Date로 변환 (한국어 형식 처리)
+    const localTime = new Date(localItem.savedAt).getTime()
+
+    console.log('dbTime:', dbTime, 'localTime:', localTime)  // 확인용
+
+    // localTime이 유효하고 DB보다 최신이면 로컬 사용
+    if (!isNaN(localTime) && localTime > dbTime) {
+      console.log('로컬 사용:', localItem.savedAt)
+      return localItem
+    }
+  }
+
+  // DB 사용
+  return {
+    id: dbItem.id,
+    storyTitle: dbItem.story_title,
+    chapters: dbItem.chapters,
+    chapterParagraphs: dbItem.chapter_paragraphs,
+    selectedGenre: dbItem.selected_genre,
+    savedAt: dbItem.saved_at
+  }
+})
 
         // localStorage에 없는 DB 항목 추가
         localList.forEach(l => {
