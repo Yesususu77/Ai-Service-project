@@ -36,11 +36,8 @@ export default function MyWritings({ onContinue, onNewWrite, username, BE_URL })
     // localStorage 시간을 Date로 변환 (한국어 형식 처리)
     const localTime = new Date(localItem.savedAt).getTime()
 
-    console.log('dbTime:', dbTime, 'localTime:', localTime)  // 확인용
-
     // localTime이 유효하고 DB보다 최신이면 로컬 사용
     if (!isNaN(localTime) && localTime > dbTime) {
-      console.log('로컬 사용:', localItem.savedAt)
       return localItem
     }
   }
