@@ -142,29 +142,66 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/logs")
 async def get_log_page():
-    # ✅ NEW: session_id 쿠키 발급 + 활성 시간 측정 + error_type 색상 구분
     html_content = """
     <!DOCTYPE html>
     <html>
         <head>
             <title>Real-time Logs</title>
             <style>
-                body { background: #121212; color: #00ff00; font-family: 'Courier New', monospace; padding: 20px; }
-                #log { border: 1px solid #333; height: 75vh; overflow-y: auto; padding: 15px; background: #000; border-radius: 5px; }
+                body { background: #121212; color: #00ff00; font-family: 'Courier New', monospace; padding: 20px; padding-bottom: 80px; position: relative; min-height: 90vh; }
+                #log { border: 1px solid #333; height: 70vh; overflow-y: auto; padding: 15px; background: #000; border-radius: 5px; }
                 .line { margin-bottom: 5px; border-bottom: 1px solid #1a1a1a; padding-bottom: 2px; }
                 .time { color: #888; margin-right: 10px; }
                 .error { color: #ff4444; }
                 .warn  { color: #ffaa00; }
                 .info  { color: #00ff00; }
                 #status { margin-bottom: 10px; color: #888; font-size: 13px; }
+                
+                /* ── 하단 고정 푸터 스타일 추가 ── */
+                .footer {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: #0a0a0a;
+                    border-top: 1px solid #222;
+                    padding: 12px 20px;
+                    box-sizing: border-box;
+                    color: #555;
+                    font-family: Arial, sans-serif;
+                    font-size: 11px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .footer-links a {
+                    color: #666;
+                    text-decoration: none;
+                    margin-left: 12px;
+                }
+                .footer-links a:hover {
+                    color: #888;
+                }
             </style>
         </head>
         <body>
             <h3>🚀 AI Model Activity Monitor</h3>
             <div id="status">⏳ 연결 중...</div>
             <div id="log"></div>
+
+            <div class="footer">
+                <div>Data provided by IFI CLAIMS Patent Services</div>
+                <div class="footer-links">
+                    <a href="#">About</a>
+                    <a href="#">Send Feedback</a>
+                    <a href="#">Public Datasets</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Help</a>
+                </div>
+            </div>
+
             <script>
-                // ✅ NEW: session_id 쿠키 발급
                 function getOrCreateSession() {
                     let sid = document.cookie.split('; ').find(r => r.startsWith('session_id='));
                     if (!sid) {
@@ -176,28 +213,21 @@ async def get_log_page():
                 }
                 const sessionId = getOrCreateSession();
 
-                // ✅ NEW: 활성 시간 측정 (마우스/스크롤 이벤트 기반)
                 let activeTime = 0;
                 let lastActive = Date.now();
                 let isActive = false;
                 function markActive() {
                     lastActive = Date.now();
-                    if (!isActive) {
-                        isActive = true;
-                    }
+                    if (!isActive) { isActive = true; }
                 }
                 setInterval(() => {
-                    if (isActive && Date.now() - lastActive < 5000) {
-                        activeTime++;
-                    } else {
-                        isActive = false;
-                    }
+                    if (isActive && Date.now() - lastActive < 5000) { activeTime++; } 
+                    else { isActive = false; }
                 }, 1000);
                 document.addEventListener('mousemove', markActive);
                 document.addEventListener('scroll', markActive);
                 document.addEventListener('keydown', markActive);
 
-                // WebSocket 연결
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 let ws;
                 function connect() {
@@ -205,7 +235,6 @@ async def get_log_page():
 
                     ws.onopen = () => {
                         document.getElementById('status').textContent = `✅ 연결됨 | session: ${sessionId}`;
-                        // ✅ 연결 유지용 ping
                         setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 20000);
                     };
 
@@ -213,7 +242,6 @@ async def get_log_page():
                         const logDiv = document.getElementById('log');
                         const line = document.createElement('div');
                         line.className = 'line';
-                        // ✅ NEW: error_type 색상 구분
                         let cls = 'info';
                         if (e.data.includes('❌') || e.data.includes('🚫') || e.data.includes('model_timeout') || e.data.includes('safety_filter')) cls = 'error';
                         else if (e.data.includes('⚠️') || e.data.includes('user_cancel')) cls = 'warn';
@@ -231,7 +259,6 @@ async def get_log_page():
                 }
                 connect();
 
-                // ✅ NEW: 활성 시간 주기적 표시
                 setInterval(() => {
                     document.getElementById('status').textContent =
                         `✅ 연결됨 | session: ${sessionId} | 활성시간: ${activeTime}s`;
