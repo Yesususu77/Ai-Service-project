@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import './MyWritings.css'
+export default function MyWritings({ onContinue, onNewWrite, username, BE_URL }) {
 
 export default function MyWritings({ onContinue, onNewWrite }) {
   const [writings, setWritings] = useState([])
 
   useEffect(() => {
+  // 1. localStorage 먼저 표시
   const list = JSON.parse(localStorage.getItem('muse_writings') || '[]')
   setWritings(list.map(w => ({
     id: w.id,
@@ -12,13 +14,43 @@ export default function MyWritings({ onContinue, onNewWrite }) {
     chapter: `${w.chapters?.length || 1}장까지`,
     date: w.savedAt || '',
     genre: w.selectedGenre || '장르 미선택',
-    // 이어쓰기 버튼에서 전체 데이터 필요
     storyTitle: w.storyTitle,
     chapters: w.chapters,
     chapterParagraphs: w.chapterParagraphs,
     selectedGenre: w.selectedGenre,
   })))
-}, [])
+
+  // 2. DB에서 최신 데이터 불러오기
+  if (!username) return
+  fetch(`${BE_URL}/api/writings/${username}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.length > 0) {
+        const dbWritings = data.map(w => ({
+          id: w.id,
+          title: w.story_title || '제목 없음',
+          chapter: `${w.chapters?.length || 1}장까지`,
+          date: w.saved_at || '',
+          genre: w.selected_genre || '장르 미선택',
+          storyTitle: w.story_title,
+          chapters: w.chapters,
+          chapterParagraphs: w.chapter_paragraphs,
+          selectedGenre: w.selected_genre,
+        }))
+        setWritings(dbWritings)
+        // localStorage도 업데이트
+        localStorage.setItem('muse_writings', JSON.stringify(data.map(w => ({
+          id: w.id,
+          storyTitle: w.story_title,
+          chapters: w.chapters,
+          chapterParagraphs: w.chapter_paragraphs,
+          selectedGenre: w.selected_genre,
+          savedAt: w.saved_at
+        }))))
+      }
+    })
+    .catch(() => {})
+}, [username])
   
   return (
     <div className="writings-page">
