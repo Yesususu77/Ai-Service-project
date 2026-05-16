@@ -203,6 +203,7 @@ export default function App() {
   // 자동저장(local)
   useEffect(() => {
   const interval = setInterval(() => {
+    console.log('자동저장 실행됨', new Date().toLocaleString())  // ← 추가
     if (!storyTitle && !Object.values(chapterParagraphs).flat().some(p => p.text)) return
     
     const id = currentWritingId || Date.now().toString()
