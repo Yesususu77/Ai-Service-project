@@ -10,20 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Merriweather:wght@300;400;700&family=Nanum+Gothic&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;500&family=Noto+Serif+KR:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- React 및 Vite 애플리케이션 마운트 포인트 -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
     <script>
     (function() {
         const BACKEND = "https://backend-service-egef.onrender.com";
 
-        // ── 세션 ID ──
+        // ==========================================
+        // [1] 세션 및 환경 정보 관리 (기존 로직)
+        // ==========================================
         let sessionId = localStorage.getItem('session_id');
         if (!sessionId) {
             sessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('session_id', sessionId);
         }
 
-        // ── 환경 정보 ──
         const ua = navigator.userAgent;
         const isMobile = /iPhone|iPad|Android/i.test(ua);
         const deviceType = isMobile ? '📱 모바일' : '🖥️ 데스크탑';
@@ -31,8 +34,8 @@
         const os = ua.includes('iPhone') ? 'iOS' : ua.includes('Android') ? 'Android' : ua.includes('Mac') ? 'macOS' : ua.includes('Win') ? 'Windows' : '기타';
         const referrer = document.referrer || 'Direct';
 
-        // ── HTTP POST로 로그 전송 ──
-        function send(msg) {
+        // 서버로 로그 통합 발송 함수
+        function sendLog(msg) {
             fetch(`${BACKEND}/api/log`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -40,35 +43,216 @@
             }).catch(() => {});
         }
 
-        // ── 접속 로그 ──
-        send(`🌐 [${sessionId}] 접속 | ${deviceType} | ${os}/${browser} | 유입: ${referrer}`);
+        // 초기 접속 로그
+        sendLog(`🌐 [${sessionId}] 접속 | ${deviceType} | ${os}/${browser} | 유입: ${referrer}`);
 
-        // ── 1. 클릭 로그 ──
+
+        // ==========================================
+        // [2] EditMuse! 실시간 사운드 매핑 엔진 내부 상태
+        // ==========================================
+        let requestIdCounter = 0;          // 레이스 컨디션 방지용 고유 ID 카운터
+        let lastValidResult = { mood: ["평화"], energy: 3, sfx: [] }; // 결함 허용(Fault Tolerance)용 백업 데이터
+        
+        let sentenceCooldown = false;      // 문장 감지 1초 쿨다운 상태 플래그
+        let debounceTimer = null;          // 변화량 기반 디바운스 타이머
+        let lastInputLength = 0;           // 직전 검증 시점의 텍스트 총 길이
+
+        const sfxCooldownMap = new Map();  // 5절: 글로벌 쿨다운 버퍼 (키워드 -> 타임스탬프)
+        const SFX_COOLDOWN_MS = 30 * 1000; // 30초 쿨다운 규칙
+
+        // 오디오 에셋 매핑 데이터 테이블 (스타일별 가용 SFX 목록 반영)
+        const SFX_AUDIO_RESOURCES = {
+            // Oriental
+            "총소리": "https://actions.google.com/sounds/v1/weapons/fire_in_the_hole.ogg", // 예시 오픈소스 주소
+            "칼소리": "/sounds/oriental/sword.mp3",
+            "함성": "/sounds/oriental/shout.mp3",
+            // Dark & Dynamic Context
+            "심장소리": "/sounds/dark/heartbeat.mp3",
+            "비명": "/sounds/dark/scream.mp3",
+            // Piano & Lofi
+            "키보드": "/sounds/piano/keyboard.mp3",
+            "식기소리": "/sounds/lofi/dishes.mp3"
+        };
+
+
+        // ==========================================
+        // [3] EditMuse! 코어 오디오 재생 알고리즘
+        // ==========================================
+        function playValidatedSFX(sfxList) {
+            if (!sfxList || !Array.isArray(sfxList)) return;
+
+            const now = Date.now();
+
+            // 4절 규격: 최대 3개의 SFX 리미트 슬라이싱 적용
+            sfxList.slice(0, 3).forEach(sfxName => {
+                
+                // 5절 규격: 글로벌 쿨다운 제어 (동일 효과음 30초 재생 간격 제한 강제)
+                if (sfxCooldownMap.has(sfxName)) {
+                    const lastPlayedTime = sfxCooldownMap.get(sfxName);
+                    if (now - lastPlayedTime < SFX_COOLDOWN_MS) {
+                        const remaining = Math.round((SFX_COOLDOWN_MS - (now - lastPlayedTime)) / 1000);
+                        console.log(`🔇 [SFX 쿨다운 차단] '${sfxName}' 재생 패스. 남은 시간: ${remaining}초`);
+                        return; 
+                    }
+                }
+
+                // 등록된 리소스가 존재할 경우에만 오디오 인터페이스 구동
+                const audioUrl = SFX_AUDIO_RESOURCES[sfxName];
+                if (audioUrl) {
+                    const audioInstance = new Audio(audioUrl);
+                    audioInstance.volume = 0.75; // 마스터 볼륨 최적화
+                    audioInstance.play()
+                        .then(() => {
+                            console.log(`🔊 [SFX 재생 성공] 키워드: ${sfxName}`);
+                            sfxCooldownMap.set(sfxName, Date.now()); // 재생 성공 시점에 타임스탬프 갱신
+                        })
+                        .catch(err => console.error(`[오디오 재생 실패] ${sfxName}:`, err));
+                } else {
+                    console.warn(`⚠️ [에셋 누락] 분석 결과에 '${sfxName}'이 검출되었으나, 매핑된 오디오 리소스가 없습니다.`);
+                }
+            });
+        }
+
+
+        // ==========================================
+        // [4] API 통신 및 데이터 가용성 전략 (Robust API Strategy)
+        // ==========================================
+        function executeTextAnalysis(currentText, activeStyle) {
+            requestIdCounter++;
+            const currentRequestId = requestIdCounter;
+
+            // 6절 규격: 텍스트 본문 최근 500자 슬라이싱 가공
+            const processedText = currentText.slice(-500);
+
+            // 2절 규격: 5초 타임아웃 처리를 위한 인터페이스 설계
+            const abortController = new AbortController();
+            const timeoutSignal = setTimeout(() => abortController.abort(), 5000);
+
+            console.log(`🚀 [분석 요청 전송] ID: ${currentRequestId} / 스타일: ${activeStyle}`);
+
+            fetch(`${BACKEND}/analyze`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: processedText,
+                    style: activeStyle,
+                    requestId: currentRequestId
+                }),
+                signal: abortController.signal
+            })
+            .then(res => {
+                clearTimeout(timeoutSignal);
+                if (!res.ok) throw new Error(`서버 에러 상태코드: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                // 2절 규격: 레이스 컨디션 방지 (현재 요청 순서 ID와 수신 데이터 ID 교차 검증)
+                if (data.requestId !== currentRequestId) {
+                    console.warn(`⚠️ [요청 폐기] 비동기 순서 꼬임 발생 감지 (응답 ID: ${data.requestId} / 현재 최신 ID: ${currentRequestId})`);
+                    return;
+                }
+
+                // 최신 유효 응답 메모리에 영속화 및 데이터 가공 처리
+                lastValidResult = data;
+                console.log("📊 [정상 응답 수신 완료]:", data);
+
+                if (data.sfx && data.sfx.length > 0) {
+                    playValidatedSFX(data.sfx);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutSignal);
+                console.error("❌ [통신 실패 혹은 타임아웃 발생]:", error.message);
+                
+                // 2절 규격: 결함 허용 (사운드 끊김 방지를 위해 직전 유효 세션 리턴 및 사운드 유지)
+                console.log("🔄 [결함 허용 가동] 백업 데이터 세션으로 사운드 유지를 시도합니다.", lastValidResult);
+                if (lastValidResult && lastValidResult.sfx) {
+                    playValidatedSFX(lastValidResult.sfx);
+                }
+            });
+        }
+
+
+        // ==========================================
+        // [5] 지능형 분석 트리거 핸들러 (Adaptive Analysis Trigger)
+        // ==========================================
+        function evaluateAdaptiveTrigger(text, style) {
+            const currentLength = text.length;
+            const lengthDelta = Math.abs(currentLength - lastInputLength);
+
+            // 텍스트 끝자리 문장부호 분석
+            const trailingText = text.trim();
+            const lastCharacter = trailingText.slice(-1);
+            const isSentenceBoundary = ['.', '!', '?', '…'].includes(lastCharacter);
+
+            // 1) 문장 단위 감지 (Sentence-End Detection)
+            if (isSentenceBoundary && !sentenceCooldown) {
+                console.log(`🎯 [트리거 작동] 문장 완료 기호 검출: "${lastCharacter}"`);
+                
+                sentenceCooldown = true;
+                setTimeout(() => { sentenceCooldown = false; }, 1000); // 1초 쿨다운 잠금
+
+                if (debounceTimer) clearTimeout(debounceTimer);
+                executeTextAnalysis(text, style);
+                lastInputLength = currentLength;
+                return;
+            }
+
+            // 2) 변화량 기반 디바운스 (Volumetric Debounce)
+            if (lengthDelta >= 100) {
+                console.log(`📈 [트리거 작동] 대량 텍스트 변화 감지 (변화량: ${lengthDelta}자)`);
+                
+                if (debounceTimer) clearTimeout(debounceTimer);
+                
+                // 1.5초 디바운스 유예 적용
+                debounceTimer = setTimeout(() => {
+                    executeTextAnalysis(text, style);
+                    lastInputLength = currentLength;
+                }, 1500);
+            }
+        }
+
+
+        // ==========================================
+        // [6] 사용자 인터랙션 및 시스템 통합 이벤트 리스너
+        // ==========================================
+
+        // 1. 클릭 로그 수집 (기존 기능)
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('button, [role="button"], a');
             if (!btn) return;
             const label = btn.innerText?.trim() || btn.getAttribute('aria-label') || btn.getAttribute('data-log') || '이름없는버튼';
-            if (label.length > 0) send(`🖱️ [${sessionId}] 클릭: "${label}"`);
+            if (label.length > 0) sendLog(`🖱️ [${sessionId}] 클릭: "${label}"`);
         });
 
-        // ── 2. 텍스트 작성 로그 (3초 디바운스) ──
-        let lastInputTime = 0;
+        // 2. 통합 텍스트 인풋 감지 (행동 데이터 로깅 + 실시간 오디오 트리거 연동)
+        let lastInputLogTime = 0;
         let prevLength = 0;
+        
         document.addEventListener('input', (e) => {
             const now = Date.now();
-            const length = e.target.value?.length ?? e.target.innerText?.length ?? 0;
-            if (now - lastInputTime > 3000) {
-                if (prevLength > 50 && length === 0) {
-                    send(`🔄 [${sessionId}] 텍스트 전체 삭제 (처음부터 다시 쓰는 중)`);
+            const targetElement = e.target;
+            const textValue = targetElement.value ?? targetElement.innerText ?? "";
+            const currentLength = textValue.length;
+
+            // ── 기존 행동 분석용 로그 파트 (3초 디바운스) ──
+            if (now - lastInputLogTime > 3000) {
+                if (prevLength > 50 && currentLength === 0) {
+                    sendLog(`🔄 [${sessionId}] 텍스트 전체 삭제 (처음부터 다시 쓰는 중)`);
                 } else {
-                    send(`✍️ [${sessionId}] 작성 중: 약 ${length}자`);
+                    sendLog(`✍️ [${sessionId}] 작성 중: 약 ${currentLength}자`);
                 }
-                prevLength = length;
-                lastInputTime = now;
+                prevLength = currentLength;
+                lastInputLogTime = now;
             }
+
+            // ── 신규 오디오 엔진 코어 연동 파트 ──
+            // 에디터의 현재 장르/스타일 상태값을 UI 셀렉터 엘리먼트 등에서 유기적으로 파싱 (기본값 'orchestral')
+            const activeStyleTheme = document.querySelector("#style-select")?.value || "orchestral";
+            evaluateAdaptiveTrigger(textValue, activeStyleTheme);
         });
 
-        // ── 3. 컴포넌트 체류 시간 (data-log 속성 기반) ──
+        // 3. 컴포넌트 체류 시간 감지 (기존 기능)
         let currentComponent = null;
         let componentEnterTime = null;
         const observer = new MutationObserver(() => {
@@ -78,7 +262,7 @@
                 if (name !== currentComponent) {
                     if (currentComponent && componentEnterTime) {
                         const stayed = Math.round((Date.now() - componentEnterTime) / 1000);
-                        if (stayed > 3) send(`⏱️ [${sessionId}] '${currentComponent}' 에서 ${stayed}초 머묾`);
+                        if (stayed > 3) sendLog(`⏱️ [${sessionId}] '${currentComponent}' 에서 ${stayed}초 머묾`);
                     }
                     currentComponent = name;
                     componentEnterTime = Date.now();
@@ -87,22 +271,22 @@
         });
         observer.observe(document.body, { subtree: true, childList: true, attributes: true });
 
-        // ── 4. 이탈/창 닫기 감지 ──
+        // 4. 이탈/창 닫기 및 활성화 감지 (기존 기능)
         const enterTime = Date.now();
         function onLeave() {
             const total = Math.round((Date.now() - enterTime) / 1000);
             const min = Math.floor(total / 60);
             const sec = total % 60;
             const formatted = min > 0 ? `${min}분 ${sec}초` : `${sec}초`;
-            send(`🚪 [${sessionId}] 이탈 감지 | 총 체류: ${formatted}`);
+            sendLog(`🚪 [${sessionId}] 이탈 감지 | 총 체류: ${formatted}`);
         }
         window.addEventListener('beforeunload', onLeave);
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) send(`👁️ [${sessionId}] 탭 비활성화`);
-            else send(`👁️ [${sessionId}] 탭 다시 활성화`);
+            if (document.hidden) sendLog(`👁️ [${sessionId}] 탭 비활성화`);
+            else sendLog(`👁️ [${sessionId}] 탭 다시 활성화`);
         });
 
-        // ── 5. 활성 체류 시간 (1분마다 보고) ──
+        // 5. 활성 체류 시간 보고 (기존 기능)
         let activeSeconds = 0;
         let lastActive = Date.now();
         document.addEventListener('mousemove', () => lastActive = Date.now());
@@ -111,9 +295,18 @@
         setInterval(() => {
             if (Date.now() - lastActive < 5000) activeSeconds++;
             if (activeSeconds > 0 && activeSeconds % 60 === 0) {
-                send(`⏱️ [${sessionId}] 활성 체류 ${activeSeconds}초 경과`);
+                sendLog(`⏱️ [${sessionId}] 활성 체류 ${activeSeconds}초 경과`);
             }
         }, 1000);
+
+        // ==========================================
+        // [7] 전역 테스트 인터페이스 윈도우 익스포트
+        // ==========================================
+        window.EditMuseCore = {
+            forceTrigger: (text, style) => executeTextAnalysis(text, style),
+            directPlaySFX: (sfxArray) => playValidatedSFX(sfxArray),
+            getCooldownTable: () => sfxCooldownMap
+        };
 
     })();
     </script>
